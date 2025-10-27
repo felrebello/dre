@@ -17,7 +17,7 @@ import { DREData, ExpenseEntry, RevenueEntry, fetchExpensesForReport, fetchReven
 import { ReconciliationAnalysis, formatCurrency, formatPercent, generateDRE } from '../utils/dreGenerator';
 import { exportToPDF, generatePDFFilename, ExportMode } from '../utils/pdfExporter';
 import ExpenseManager from './ExpenseManager';
-import DashboardCharts from './DashboardCharts';
+import FinancialDashboard from './FinancialDashboard';
 import ExpenseDetailedTable from './ExpenseDetailedTable';
 import ExportOptionsMenu from './ExportOptionsMenu';
 import { RegimeTributario } from '../types/tax';
@@ -843,7 +843,7 @@ export default function DREReport({
         {/* Dashboard de Gráficos (visível na tela quando ativado, sempre incluído no PDF se modo apropriado) */}
         {showDashboard && (
           <div data-section="dashboard" className="mb-8 w-full">
-            <DashboardCharts dreData={dreData} expenses={expenses} revenues={revenues} />
+            <FinancialDashboard dreData={dreData} reportMonth={reportMonth} />
           </div>
         )}
 
