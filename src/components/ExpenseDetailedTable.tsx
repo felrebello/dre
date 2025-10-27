@@ -74,7 +74,7 @@ export default function ExpenseDetailedTable({ expenses }: ExpenseDetailedTableP
   };
 
   return (
-    <div className="space-y-6 print-only">
+    <div className="space-y-6">
       <div className="text-center mb-6">
         <h2 className="text-3xl font-bold text-gray-900">Detalhamento de Despesas</h2>
         <p className="text-gray-600 mt-2">Lista completa de todas as despesas do período</p>

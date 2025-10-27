@@ -56,6 +56,22 @@
   h1, h2, h3 {
     page-break-after: avoid;
   }
+
+  /* Garantir que tabelas sejam renderizadas corretamente */
+  table {
+    break-inside: auto;
+  }
+
+  tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Evitar quebra de página nos gráficos */
+  .recharts-wrapper {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }
 
 .no-print {
