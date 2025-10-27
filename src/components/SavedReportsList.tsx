@@ -19,9 +19,10 @@ import {
   fetchAllReports,
   searchReports,
   ReportSummary,
-  supabase,
   Clinic,
+  fetchUserClinics,
 } from '../lib/firebase';
+import { useAuth } from './AuthProvider';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 
 interface SavedReportsListProps {
@@ -41,6 +42,7 @@ export default function SavedReportsList({
   onBack,
   onNewReport,
 }: SavedReportsListProps) {
+  const { user } = useAuth();
   const [reports, setReports] = useState<ReportSummary[]>([]);
   const [filteredReports, setFilteredReports] = useState<ReportSummary[]>([]);
   const [clinics, setClinics] = useState<Clinic[]>([]);
@@ -70,18 +72,15 @@ export default function SavedReportsList({
 
   // Função para carregar dados
   const loadData = async () => {
+    if (!user) return;
+
     setLoading(true);
     setError(null);
 
     try {
-      // Carregar clínicas
-      const { data: clinicsData, error: clinicsError } = await supabase
-        .from('clinics')
-        .select('*')
-        .order('name');
-
-      if (clinicsError) throw clinicsError;
-      setClinics(clinicsData || []);
+      // Carregar clínicas do usuário
+      const clinicsData = await fetchUserClinics(user.uid);
+      setClinics(clinicsData);
 
       // Carregar relatórios
       const reportsData = await fetchAllReports();
