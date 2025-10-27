@@ -76,16 +76,16 @@ export default function DashboardCharts({ dreData, expenses, revenues }: Dashboa
 
   return (
     <div className="space-y-8">
-      <div className="text-center mb-8">
+      <div className="text-center mb-6">
         <h2 className="text-3xl font-bold text-gray-900">Dashboard de Análise Financeira</h2>
-        <p className="text-gray-600 mt-2">Visualizações e indicadores chave de desempenho</p>
+        <p className="text-gray-600 mt-1">Visualizações e indicadores chave de desempenho</p>
       </div>
 
       {/* Gráfico de Despesas por Categoria (Pizza) */}
       {expensesByCategory.length > 0 && (
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">Distribuição de Despesas por Categoria</h3>
-          <ResponsiveContainer width="100%" height={400}>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">Distribuição de Despesas por Categoria</h3>
+          <ResponsiveContainer width="100%" height={320}>
             <PieChart>
               <Pie
                 data={expensesByCategory}
@@ -93,7 +93,7 @@ export default function DashboardCharts({ dreData, expenses, revenues }: Dashboa
                 nameKey="category"
                 cx="50%"
                 cy="50%"
-                outerRadius={120}
+                outerRadius={100}
                 label={(entry) => `${entry.category}: ${entry.percentage.toFixed(1)}%`}
                 labelLine={true}
               >
@@ -111,8 +111,8 @@ export default function DashboardCharts({ dreData, expenses, revenues }: Dashboa
       {/* Gráfico de Despesas Fixas vs Variáveis */}
       {(dreData.despesas_fixas > 0 || dreData.despesas_variaveis > 0) && (
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">Despesas Fixas vs Variáveis</h3>
-          <ResponsiveContainer width="100%" height={350}>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">Despesas Fixas vs Variáveis</h3>
+          <ResponsiveContainer width="100%" height={280}>
             <BarChart data={fixedVsVariableData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
@@ -122,7 +122,7 @@ export default function DashboardCharts({ dreData, expenses, revenues }: Dashboa
               <Bar dataKey="value" fill="#0088FE" name="Valor" />
             </BarChart>
           </ResponsiveContainer>
-          <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-2 gap-4 mt-3">
             <div className="bg-cyan-50 rounded-lg p-4">
               <p className="text-sm text-gray-600">Despesas Fixas</p>
               <p className="text-2xl font-bold text-cyan-700">{formatCurrency(dreData.despesas_fixas)}</p>
@@ -144,8 +144,8 @@ export default function DashboardCharts({ dreData, expenses, revenues }: Dashboa
       {/* Gráfico de Top 10 Maiores Despesas */}
       {topExpenses.length > 0 && (
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">Top 10 Maiores Despesas</h3>
-          <ResponsiveContainer width="100%" height={400}>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">Top 10 Maiores Despesas</h3>
+          <ResponsiveContainer width="100%" height={320}>
             <BarChart
               data={topExpenses}
               layout="vertical"
@@ -171,8 +171,8 @@ export default function DashboardCharts({ dreData, expenses, revenues }: Dashboa
 
       {/* Gráfico de Margens (%) */}
       <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">Análise de Margens (%)</h3>
-        <ResponsiveContainer width="100%" height={300}>
+        <h3 className="text-xl font-bold text-gray-900 mb-3">Análise de Margens (%)</h3>
+        <ResponsiveContainer width="100%" height={250}>
           <BarChart data={marginsData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />
@@ -182,7 +182,7 @@ export default function DashboardCharts({ dreData, expenses, revenues }: Dashboa
             <Bar dataKey="value" fill="#82ca9d" name="Percentual" />
           </BarChart>
         </ResponsiveContainer>
-        <div className="grid grid-cols-3 gap-4 mt-4">
+        <div className="grid grid-cols-3 gap-4 mt-3">
           <div className="bg-emerald-50 rounded-lg p-4 text-center">
             <p className="text-sm text-gray-600">Margem Bruta</p>
             <p className="text-3xl font-bold text-emerald-700">
@@ -207,8 +207,8 @@ export default function DashboardCharts({ dreData, expenses, revenues }: Dashboa
       {/* Gráfico de Receitas por Categoria */}
       {revenuesByCategory.length > 0 && (
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">Distribuição de Receitas por Categoria</h3>
-          <ResponsiveContainer width="100%" height={400}>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">Distribuição de Receitas por Categoria</h3>
+          <ResponsiveContainer width="100%" height={320}>
             <PieChart>
               <Pie
                 data={revenuesByCategory}
@@ -216,7 +216,7 @@ export default function DashboardCharts({ dreData, expenses, revenues }: Dashboa
                 nameKey="category"
                 cx="50%"
                 cy="50%"
-                outerRadius={120}
+                outerRadius={100}
                 label={(entry) => `${entry.category}: ${entry.percentage.toFixed(1)}%`}
                 labelLine={true}
               >
@@ -233,8 +233,8 @@ export default function DashboardCharts({ dreData, expenses, revenues }: Dashboa
 
       {/* Comparação Visual Receitas vs Despesas */}
       <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">Composição Financeira</h3>
-        <ResponsiveContainer width="100%" height={350}>
+        <h3 className="text-xl font-bold text-gray-900 mb-3">Composição Financeira</h3>
+        <ResponsiveContainer width="100%" height={280}>
           <BarChart data={revenueExpenseComparison}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />
