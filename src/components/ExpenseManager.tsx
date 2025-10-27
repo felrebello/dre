@@ -332,6 +332,7 @@ export default function ExpenseManager({
       {editingExpense && (
         <EditExpenseModal
           expense={editingExpense}
+          reportId={reportId}
           reportMonth={reportMonth}
           onClose={() => setEditingExpense(null)}
           onSuccess={() => {
@@ -565,6 +566,7 @@ function AddExpenseModal({
 // Modal para editar despesa existente
 interface EditExpenseModalProps {
   expense: ExpenseEntry;
+  reportId: string;
   reportMonth: string;
   onClose: () => void;
   onSuccess: () => void;
@@ -573,6 +575,7 @@ interface EditExpenseModalProps {
 
 function EditExpenseModal({
   expense,
+  reportId,
   reportMonth,
   onClose,
   onSuccess,
