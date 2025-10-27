@@ -841,13 +841,11 @@ export default function DREReport({
         )}
 
         {/* Dashboard de Gráficos (visível na tela quando ativado, sempre incluído no PDF se modo apropriado) */}
-        <div
-          data-section="dashboard"
-          style={{ display: showDashboard ? 'block' : 'none' }}
-          className="mb-8"
-        >
-          <DashboardCharts dreData={dreData} expenses={expenses} revenues={revenues} />
-        </div>
+        {showDashboard && (
+          <div data-section="dashboard" className="mb-8 w-full">
+            <DashboardCharts dreData={dreData} expenses={expenses} revenues={revenues} />
+          </div>
+        )}
 
         {/* Tabela Detalhada de Despesas (visível na tela quando ativado, sempre incluído no PDF se modo complete) */}
         <div

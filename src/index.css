@@ -23,6 +23,23 @@ body {
   display: block;
 }
 
+/* Garantir renderização correta dos gráficos Recharts */
+.recharts-wrapper {
+  width: 100% !important;
+  position: relative;
+}
+
+.recharts-responsive-container {
+  width: 100% !important;
+  position: relative;
+}
+
+/* Garantir que o dashboard ocupe toda a largura */
+[data-section="dashboard"] {
+  width: 100%;
+  max-width: 100%;
+}
+
 @media print {
   @page {
     margin: 1cm;

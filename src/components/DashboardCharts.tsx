@@ -75,7 +75,7 @@ export default function DashboardCharts({ dreData, expenses, revenues }: Dashboa
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 w-full">
       <div className="text-center mb-6">
         <h2 className="text-3xl font-bold text-gray-900">Dashboard de Análise Financeira</h2>
         <p className="text-gray-600 mt-1">Visualizações e indicadores chave de desempenho</p>
@@ -83,46 +83,50 @@ export default function DashboardCharts({ dreData, expenses, revenues }: Dashboa
 
       {/* Gráfico de Despesas por Categoria (Pizza) */}
       {expensesByCategory.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-3">Distribuição de Despesas por Categoria</h3>
-          <ResponsiveContainer width="100%" height={320}>
-            <PieChart>
-              <Pie
-                data={expensesByCategory}
-                dataKey="total"
-                nameKey="category"
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                label={(entry) => `${entry.category}: ${entry.percentage.toFixed(1)}%`}
-                labelLine={true}
-              >
-                {expensesByCategory.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 w-full">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Distribuição de Despesas por Categoria</h3>
+          <div className="w-full" style={{ minHeight: '320px' }}>
+            <ResponsiveContainer width="100%" height={320}>
+              <PieChart>
+                <Pie
+                  data={expensesByCategory}
+                  dataKey="total"
+                  nameKey="category"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  label={(entry) => `${entry.category}: ${entry.percentage.toFixed(1)}%`}
+                  labelLine={true}
+                >
+                  {expensesByCategory.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
 
       {/* Gráfico de Despesas Fixas vs Variáveis */}
       {(dreData.despesas_fixas > 0 || dreData.despesas_variaveis > 0) && (
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-3">Despesas Fixas vs Variáveis</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={fixedVsVariableData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis tickFormatter={(value) => formatCurrency(value)} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              <Bar dataKey="value" fill="#0088FE" name="Valor" />
-            </BarChart>
-          </ResponsiveContainer>
-          <div className="grid grid-cols-2 gap-4 mt-3">
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 w-full">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Despesas Fixas vs Variáveis</h3>
+          <div className="w-full" style={{ minHeight: '280px' }}>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={fixedVsVariableData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis tickFormatter={(value) => formatCurrency(value)} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                <Bar dataKey="value" fill="#0088FE" name="Valor" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="grid grid-cols-2 gap-4 mt-4">
             <div className="bg-cyan-50 rounded-lg p-4">
               <p className="text-sm text-gray-600">Despesas Fixas</p>
               <p className="text-2xl font-bold text-cyan-700">{formatCurrency(dreData.despesas_fixas)}</p>
@@ -143,46 +147,50 @@ export default function DashboardCharts({ dreData, expenses, revenues }: Dashboa
 
       {/* Gráfico de Top 10 Maiores Despesas */}
       {topExpenses.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-3">Top 10 Maiores Despesas</h3>
-          <ResponsiveContainer width="100%" height={320}>
-            <BarChart
-              data={topExpenses}
-              layout="vertical"
-              margin={{ top: 5, right: 30, left: 150, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" tickFormatter={(value) => formatCurrency(value)} />
-              <YAxis
-                type="category"
-                dataKey="description"
-                width={140}
-                tick={{ fontSize: 12 }}
-              />
-              <Tooltip
-                formatter={(value: any) => formatCurrency(value)}
-                labelStyle={{ fontSize: 12 }}
-              />
-              <Bar dataKey="amount" fill="#FF8042" name="Valor" />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 w-full">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Top 10 Maiores Despesas</h3>
+          <div className="w-full" style={{ minHeight: '320px' }}>
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart
+                data={topExpenses}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 150, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" tickFormatter={(value) => formatCurrency(value)} />
+                <YAxis
+                  type="category"
+                  dataKey="description"
+                  width={140}
+                  tick={{ fontSize: 12 }}
+                />
+                <Tooltip
+                  formatter={(value: any) => formatCurrency(value)}
+                  labelStyle={{ fontSize: 12 }}
+                />
+                <Bar dataKey="amount" fill="#FF8042" name="Valor" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
 
       {/* Gráfico de Margens (%) */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-        <h3 className="text-xl font-bold text-gray-900 mb-3">Análise de Margens (%)</h3>
-        <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={marginsData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
-            <Tooltip formatter={(value: any) => `${value.toFixed(2)}%`} />
-            <Legend />
-            <Bar dataKey="value" fill="#82ca9d" name="Percentual" />
-          </BarChart>
-        </ResponsiveContainer>
-        <div className="grid grid-cols-3 gap-4 mt-3">
+      <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 w-full">
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Análise de Margens (%)</h3>
+        <div className="w-full" style={{ minHeight: '250px' }}>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={marginsData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
+              <Tooltip formatter={(value: any) => `${value.toFixed(2)}%`} />
+              <Legend />
+              <Bar dataKey="value" fill="#82ca9d" name="Percentual" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="grid grid-cols-3 gap-4 mt-4">
           <div className="bg-emerald-50 rounded-lg p-4 text-center">
             <p className="text-sm text-gray-600">Margem Bruta</p>
             <p className="text-3xl font-bold text-emerald-700">
@@ -206,47 +214,51 @@ export default function DashboardCharts({ dreData, expenses, revenues }: Dashboa
 
       {/* Gráfico de Receitas por Categoria */}
       {revenuesByCategory.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-3">Distribuição de Receitas por Categoria</h3>
-          <ResponsiveContainer width="100%" height={320}>
-            <PieChart>
-              <Pie
-                data={revenuesByCategory}
-                dataKey="total"
-                nameKey="category"
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                label={(entry) => `${entry.category}: ${entry.percentage.toFixed(1)}%`}
-                labelLine={true}
-              >
-                {revenuesByCategory.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 w-full">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Distribuição de Receitas por Categoria</h3>
+          <div className="w-full" style={{ minHeight: '320px' }}>
+            <ResponsiveContainer width="100%" height={320}>
+              <PieChart>
+                <Pie
+                  data={revenuesByCategory}
+                  dataKey="total"
+                  nameKey="category"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  label={(entry) => `${entry.category}: ${entry.percentage.toFixed(1)}%`}
+                  labelLine={true}
+                >
+                  {revenuesByCategory.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
 
       {/* Comparação Visual Receitas vs Despesas */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-        <h3 className="text-xl font-bold text-gray-900 mb-3">Composição Financeira</h3>
-        <ResponsiveContainer width="100%" height={280}>
-          <BarChart data={revenueExpenseComparison}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis tickFormatter={(value) => formatCurrency(value)} />
-            <Tooltip formatter={(value: any) => formatCurrency(value)} />
-            <Legend />
-            <Bar dataKey="Receita Bruta" fill="#10b981" name="Receita Bruta" />
-            <Bar dataKey="Impostos" fill="#ef4444" name="Impostos" />
-            <Bar dataKey="Despesas Operacionais" fill="#f59e0b" name="Despesas Operacionais" />
-            <Bar dataKey="Lucro Líquido" fill="#3b82f6" name="Lucro Líquido" />
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 w-full">
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Composição Financeira</h3>
+        <div className="w-full" style={{ minHeight: '280px' }}>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={revenueExpenseComparison}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis tickFormatter={(value) => formatCurrency(value)} />
+              <Tooltip formatter={(value: any) => formatCurrency(value)} />
+              <Legend />
+              <Bar dataKey="Receita Bruta" fill="#10b981" name="Receita Bruta" />
+              <Bar dataKey="Impostos" fill="#ef4444" name="Impostos" />
+              <Bar dataKey="Despesas Operacionais" fill="#f59e0b" name="Despesas Operacionais" />
+              <Bar dataKey="Lucro Líquido" fill="#3b82f6" name="Lucro Líquido" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );
