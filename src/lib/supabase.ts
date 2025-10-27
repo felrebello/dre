@@ -174,6 +174,26 @@ export async function deleteExpense(expenseId: string) {
   }
 }
 
+// Função para atualizar despesa
+export async function updateExpense(
+  expenseId: string,
+  expense: Partial<Omit<ExpenseEntry, 'id' | 'created_at' | 'report_id'>>
+) {
+  const { data, error } = await supabase
+    .from('expense_entries')
+    .update(expense)
+    .eq('id', expenseId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Erro ao atualizar despesa:', error);
+    throw error;
+  }
+
+  return data;
+}
+
 // Função para atualizar DRE no relatório
 export async function updateReportDRE(reportId: string, dreData: DREData) {
   const { error } = await supabase

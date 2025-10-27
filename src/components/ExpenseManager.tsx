@@ -1,7 +1,7 @@
 // Componente para gerenciar despesas do relatório (adicionar, remover, visualizar)
 import { useState, useMemo } from 'react';
-import { Trash2, Plus, X, Calendar, DollarSign, FileText, AlertCircle, Tag } from 'lucide-react';
-import { ExpenseEntry, deleteExpense, addManualExpense, extractYearMonth } from '../lib/supabase';
+import { Trash2, Plus, X, Calendar, DollarSign, FileText, AlertCircle, Tag, Edit } from 'lucide-react';
+import { ExpenseEntry, deleteExpense, addManualExpense, updateExpense, extractYearMonth } from '../lib/supabase';
 import { identificarImposto } from '../types/tax';
 
 interface ExpenseManagerProps {
@@ -18,6 +18,7 @@ export default function ExpenseManager({
   onExpensesChanged,
 }: ExpenseManagerProps) {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<ExpenseEntry | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'manual' | 'imported'>('all');
@@ -285,13 +286,22 @@ export default function ExpenseManager({
                           </button>
                         </div>
                       ) : (
-                        <button
-                          onClick={() => setDeleteConfirm(expense.id)}
-                          className="text-red-600 hover:text-red-800 transition-colors"
-                          title="Excluir despesa"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => setEditingExpense(expense)}
+                            className="text-blue-600 hover:text-blue-800 transition-colors"
+                            title="Editar despesa"
+                          >
+                            <Edit className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm(expense.id)}
+                            className="text-red-600 hover:text-red-800 transition-colors"
+                            title="Excluir despesa"
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -311,6 +321,22 @@ export default function ExpenseManager({
           onSuccess={() => {
             setShowAddModal(false);
             setSuccess('Despesa adicionada com sucesso! Clique em "Salvar e Recalcular" para atualizar o DRE.');
+            setTimeout(() => setSuccess(null), 5000);
+            onExpensesChanged();
+          }}
+          onError={(msg) => setError(msg)}
+        />
+      )}
+
+      {/* Modal de editar despesa */}
+      {editingExpense && (
+        <EditExpenseModal
+          expense={editingExpense}
+          reportMonth={reportMonth}
+          onClose={() => setEditingExpense(null)}
+          onSuccess={() => {
+            setEditingExpense(null);
+            setSuccess('Despesa atualizada com sucesso! Clique em "Salvar e Recalcular" para atualizar o DRE.');
             setTimeout(() => setSuccess(null), 5000);
             onExpensesChanged();
           }}
@@ -528,6 +554,219 @@ function AddExpenseModal({
               className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50"
             >
               {isSubmitting ? 'Adicionando...' : 'Adicionar Despesa'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Modal para editar despesa existente
+interface EditExpenseModalProps {
+  expense: ExpenseEntry;
+  reportMonth: string;
+  onClose: () => void;
+  onSuccess: () => void;
+  onError: (message: string) => void;
+}
+
+function EditExpenseModal({
+  expense,
+  reportMonth,
+  onClose,
+  onSuccess,
+  onError,
+}: EditExpenseModalProps) {
+  const [formData, setFormData] = useState({
+    date: expense.date,
+    description: expense.description,
+    category: expense.category,
+    amount: expense.amount.toString(),
+    tipo_despesa: (expense.tipo_despesa || 'fixa') as 'fixa' | 'variavel',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      // Validar que a data está no mês correto
+      if (extractYearMonth(formData.date) !== reportMonth) {
+        onError(
+          `A data da despesa deve estar no mês do relatório (${reportMonth}). Data informada: ${extractYearMonth(formData.date)}`
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Validar valor
+      const amount = parseFloat(formData.amount);
+      if (isNaN(amount) || amount <= 0) {
+        onError('Por favor, informe um valor válido maior que zero.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Atualizar despesa
+      await updateExpense(expense.id, {
+        date: formData.date,
+        description: formData.description,
+        category: formData.category,
+        amount,
+        tipo_despesa: formData.tipo_despesa,
+      });
+
+      onSuccess();
+    } catch (err) {
+      console.error('Erro ao atualizar despesa:', err);
+      onError('Erro ao atualizar despesa. Tente novamente.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Cabeçalho */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
+          <h3 className="text-2xl font-bold text-white">Editar Despesa</h3>
+          <button
+            onClick={onClose}
+            className="text-white hover:text-gray-200 transition-colors"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        {/* Formulário */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Data */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <Calendar className="h-4 w-4 inline mr-2" />
+              Data da Despesa
+            </label>
+            <input
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Mês do relatório: {reportMonth}
+            </p>
+          </div>
+
+          {/* Descrição */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <FileText className="h-4 w-4 inline mr-2" />
+              Descrição
+            </label>
+            <input
+              type="text"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              required
+              placeholder="Ex: Aluguel escritório, Energia elétrica..."
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* Categoria */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <Tag className="h-4 w-4 inline mr-2" />
+              Categoria
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="Pessoal">Pessoal</option>
+              <option value="Administrativas">Administrativas</option>
+              <option value="Vendas e Marketing">Vendas e Marketing</option>
+              <option value="Despesas Financeiras">Despesas Financeiras</option>
+              <option value="Custo dos Serviços">Custo dos Serviços</option>
+              <option value="Outras Despesas Operacionais">Outras Despesas Operacionais</option>
+            </select>
+          </div>
+
+          {/* Valor */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <DollarSign className="h-4 w-4 inline mr-2" />
+              Valor (R$)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={formData.amount}
+              onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+              required
+              placeholder="0,00"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* Tipo de Despesa */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Tipo de Despesa
+            </label>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, tipo_despesa: 'fixa' })}
+                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                  formData.tipo_despesa === 'fixa'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Fixa
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, tipo_despesa: 'variavel' })}
+                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                  formData.tipo_despesa === 'variavel'
+                    ? 'bg-orange-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Variável
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              <strong>Fixa:</strong> Não varia com o volume de atendimentos (ex: aluguel, salários)
+              <br />
+              <strong>Variável:</strong> Proporcional ao volume de atendimentos (ex: materiais, comissões)
+            </p>
+          </div>
+
+          {/* Botões */}
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50"
+            >
+              {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
             </button>
           </div>
         </form>
