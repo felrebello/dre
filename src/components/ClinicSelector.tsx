@@ -1,7 +1,8 @@
 // Componente de seleção de clínica (página inicial)
 import { useState, useEffect } from 'react';
 import { Building2, Plus, ArrowRight, FileText } from 'lucide-react';
-import { supabase, Clinic } from '../lib/firebase';
+import { Clinic, fetchUserClinics, createClinic } from '../lib/firebase';
+import { useAuth } from './AuthProvider';
 
 interface ClinicSelectorProps {
   onClinicSelected: (clinicId: string, clinicName: string) => void;
@@ -9,6 +10,7 @@ interface ClinicSelectorProps {
 }
 
 export default function ClinicSelector({ onClinicSelected, onViewSavedReports }: ClinicSelectorProps) {
+  const { user } = useAuth();
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -17,18 +19,17 @@ export default function ClinicSelector({ onClinicSelected, onViewSavedReports }:
 
   // Carregar clínicas do banco de dados
   useEffect(() => {
-    loadClinics();
-  }, []);
+    if (user) {
+      loadClinics();
+    }
+  }, [user]);
 
   const loadClinics = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('clinics')
-        .select('*')
-        .order('name', { ascending: true });
+    if (!user) return;
 
-      if (error) throw error;
-      setClinics(data || []);
+    try {
+      const data = await fetchUserClinics(user.uid);
+      setClinics(data);
     } catch (error) {
       console.error('Erro ao carregar clínicas:', error);
     } finally {
@@ -39,16 +40,11 @@ export default function ClinicSelector({ onClinicSelected, onViewSavedReports }:
   // Adicionar nova clínica
   const handleAddClinic = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newClinicName.trim()) return;
+    if (!newClinicName.trim() || !user) return;
 
     setAdding(true);
     try {
-      const { error } = await supabase
-        .from('clinics')
-        .insert([{ name: newClinicName.trim() }]);
-
-      if (error) throw error;
-
+      await createClinic(newClinicName.trim(), user.uid);
       setNewClinicName('');
       setShowAddForm(false);
       await loadClinics();
