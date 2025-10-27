@@ -2,6 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Estilos base para garantir renderização correta */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Garantir que elementos com classes Tailwind sejam renderizados */
+#root {
+  min-height: 100vh;
+  display: block;
+}
+
 @media print {
   @page {
     margin: 1.5cm;
