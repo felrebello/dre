@@ -75,7 +75,7 @@ export default function DashboardCharts({ dreData, expenses, revenues }: Dashboa
   };
 
   return (
-    <div className="space-y-8 print-only">
+    <div className="space-y-8">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-gray-900">Dashboard de Análise Financeira</h2>
         <p className="text-gray-600 mt-2">Visualizações e indicadores chave de desempenho</p>
