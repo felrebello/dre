@@ -53,6 +53,9 @@ export interface ExpenseEntry {
   classificacao_manual?: boolean;
   sugestao_automatica?: string | null;
   is_manual_entry?: boolean;
+  e_imposto?: boolean;
+  tipo_imposto?: 'receita' | 'lucro' | null;
+  categoria_imposto?: string | null;
   created_at: string;
 }
 
@@ -448,6 +451,9 @@ export async function duplicateReport(reportId: string, newMonth: string) {
       classificacao_manual: e.classificacao_manual,
       sugestao_automatica: e.sugestao_automatica,
       is_manual_entry: e.is_manual_entry,
+      e_imposto: e.e_imposto,
+      tipo_imposto: e.tipo_imposto,
+      categoria_imposto: e.categoria_imposto,
     }));
 
     const { error: expensesError } = await supabase

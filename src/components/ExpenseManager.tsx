@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 import { Trash2, Plus, X, Calendar, DollarSign, FileText, AlertCircle, Tag, Edit } from 'lucide-react';
 import { ExpenseEntry, deleteExpense, addManualExpense, updateExpense, extractYearMonth } from '../lib/supabase';
-import { identificarImposto } from '../types/tax';
+import { identificarImposto, ImpostoReceita, ImpostoLucro } from '../types/tax';
 
 interface ExpenseManagerProps {
   reportId: string;
@@ -584,6 +584,9 @@ function EditExpenseModal({
     category: expense.category,
     amount: expense.amount.toString(),
     tipo_despesa: (expense.tipo_despesa || 'fixa') as 'fixa' | 'variavel',
+    e_imposto: expense.e_imposto || false,
+    tipo_imposto: expense.tipo_imposto || null,
+    categoria_imposto: expense.categoria_imposto || null,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -615,7 +618,10 @@ function EditExpenseModal({
         description: formData.description,
         category: formData.category,
         amount,
-        tipo_despesa: formData.tipo_despesa,
+        tipo_despesa: formData.e_imposto ? null : formData.tipo_despesa,
+        e_imposto: formData.e_imposto,
+        tipo_imposto: formData.e_imposto ? formData.tipo_imposto : null,
+        categoria_imposto: formData.e_imposto ? formData.categoria_imposto : null,
       });
 
       onSuccess();
@@ -715,7 +721,108 @@ function EditExpenseModal({
             />
           </div>
 
-          {/* Tipo de Despesa */}
+          {/* É Imposto? */}
+          <div className="border-t border-gray-200 pt-4">
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.e_imposto}
+                onChange={(e) => {
+                  const isChecked = e.target.checked;
+                  setFormData({
+                    ...formData,
+                    e_imposto: isChecked,
+                    tipo_imposto: isChecked ? 'receita' : null,
+                    categoria_imposto: null,
+                  });
+                }}
+                className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+              />
+              <span className="text-sm font-semibold text-gray-700">
+                Esta despesa é um imposto
+              </span>
+            </label>
+            <p className="text-xs text-gray-500 mt-1 ml-8">
+              Impostos não precisam ser classificados como fixos ou variáveis
+            </p>
+          </div>
+
+          {/* Campos de Imposto - só aparecem se e_imposto = true */}
+          {formData.e_imposto && (
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 space-y-4">
+              {/* Tipo de Imposto */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Tipo de Imposto
+                </label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({
+                      ...formData,
+                      tipo_imposto: 'receita',
+                      categoria_imposto: null,
+                    })}
+                    className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                      formData.tipo_imposto === 'receita'
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    Sobre Receita
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({
+                      ...formData,
+                      tipo_imposto: 'lucro',
+                      categoria_imposto: null,
+                    })}
+                    className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                      formData.tipo_imposto === 'lucro'
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    Sobre Lucro
+                  </button>
+                </div>
+              </div>
+
+              {/* Categoria de Imposto */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Categoria do Imposto
+                </label>
+                <select
+                  value={formData.categoria_imposto || ''}
+                  onChange={(e) => setFormData({ ...formData, categoria_imposto: e.target.value || null })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+                >
+                  <option value="">Selecione uma categoria</option>
+                  {formData.tipo_imposto === 'receita' ? (
+                    <>
+                      <option value={ImpostoReceita.PIS}>PIS</option>
+                      <option value={ImpostoReceita.COFINS}>COFINS</option>
+                      <option value={ImpostoReceita.ISS}>ISS</option>
+                      <option value={ImpostoReceita.ICMS}>ICMS</option>
+                      <option value={ImpostoReceita.SIMPLES}>SIMPLES Nacional</option>
+                      <option value="outros">Outros</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value={ImpostoLucro.IRPJ}>IRPJ</option>
+                      <option value={ImpostoLucro.CSLL}>CSLL</option>
+                      <option value="outros">Outros</option>
+                    </>
+                  )}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Tipo de Despesa - só aparece se NÃO for imposto */}
+          {!formData.e_imposto && (
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Tipo de Despesa
@@ -750,6 +857,7 @@ function EditExpenseModal({
               <strong>Variável:</strong> Proporcional ao volume de atendimentos (ex: materiais, comissões)
             </p>
           </div>
+          )}
 
           {/* Botões */}
           <div className="flex gap-3 pt-4">
