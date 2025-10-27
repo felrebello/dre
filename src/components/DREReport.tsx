@@ -13,7 +13,7 @@ import {
   BarChart3,
   ListChecks,
 } from 'lucide-react';
-import { DREData, ExpenseEntry, RevenueEntry, fetchExpensesForReport, fetchRevenuesForReport, updateReportDRE, extractYearMonth } from '../lib/supabase';
+import { DREData, ExpenseEntry, RevenueEntry, fetchExpensesForReport, fetchRevenuesForReport, updateReportDRE, extractYearMonth } from '../lib/firebase';
 import { ReconciliationAnalysis, formatCurrency, formatPercent, generateDRE } from '../utils/dreGenerator';
 import { exportToPDF, generatePDFFilename, ExportMode } from '../utils/pdfExporter';
 import ExpenseManager from './ExpenseManager';

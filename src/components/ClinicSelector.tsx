@@ -1,7 +1,7 @@
 // Componente de seleção de clínica (página inicial)
 import { useState, useEffect } from 'react';
 import { Building2, Plus, ArrowRight, FileText } from 'lucide-react';
-import { supabase, Clinic } from '../lib/supabase';
+import { supabase, Clinic } from '../lib/firebase';
 
 interface ClinicSelectorProps {
   onClinicSelected: (clinicId: string, clinicName: string) => void;

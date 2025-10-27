@@ -1,5 +1,5 @@
 // Gerador de relatório DRE (Demonstração do Resultado do Exercício)
-import { DREData } from '../lib/supabase';
+import { DREData } from '../lib/firebase';
 import {
   ParsedRevenue,
   ParsedExpense,

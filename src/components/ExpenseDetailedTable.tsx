@@ -1,6 +1,6 @@
 // Componente de tabela detalhada de todas as despesas do relatório
 import { useMemo } from 'react';
-import { ExpenseEntry } from '../lib/supabase';
+import { ExpenseEntry } from '../lib/firebase';
 import { formatCurrency } from '../utils/dreGenerator';
 import { identificarImposto } from '../types/tax';
 import { Tag } from 'lucide-react';

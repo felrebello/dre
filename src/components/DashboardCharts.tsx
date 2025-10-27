@@ -1,7 +1,7 @@
 // Componente de dashboard com gráficos para análise visual do DRE
 import { useMemo } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { DREData, ExpenseEntry, RevenueEntry } from '../lib/supabase';
+import { DREData, ExpenseEntry, RevenueEntry } from '../lib/firebase';
 import { aggregateExpensesByCategory, aggregateRevenuesByCategory, getTopExpenses, formatCurrency } from '../utils/dreGenerator';
 
 interface DashboardChartsProps {

@@ -1,17 +1,19 @@
 {
-  "name": "vite-react-typescript-starter",
+  "name": "dre-financial-reports",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json"
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "firebase:deploy": "npm run build && firebase deploy",
+    "firebase:emulators": "firebase emulators:start"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.57.4",
+    "firebase": "^10.7.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.3",
     "lucide-react": "^0.344.0",

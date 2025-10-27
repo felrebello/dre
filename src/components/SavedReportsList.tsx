@@ -21,7 +21,7 @@ import {
   ReportSummary,
   supabase,
   Clinic,
-} from '../lib/supabase';
+} from '../lib/firebase';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 
 interface SavedReportsListProps {
