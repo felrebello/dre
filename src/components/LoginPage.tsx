@@ -26,8 +26,12 @@ export default function LoginPage() {
       <div className="max-w-md w-full">
         {/* Logo e Título */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-lg mb-4">
-            <TrendingUp className="h-10 w-10 text-white" />
+          <div className="inline-flex items-center justify-center mb-4">
+            <img
+              src="/Nort logo 2024 ok.png"
+              alt="Nort Logo"
+              className="h-24 w-auto object-contain"
+            />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
             DRE Financial
