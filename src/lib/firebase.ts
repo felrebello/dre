@@ -651,9 +651,9 @@ export async function createReport(
             classificacao_manual: e.classificacao_manual,
             sugestao_automatica: e.sugestao_automatica,
             is_manual_entry: false,
-            e_imposto: e.e_imposto,
-            tipo_imposto: e.tipo_imposto,
-            categoria_imposto: e.categoria_imposto,
+            e_imposto: e.e_imposto || false,
+            tipo_imposto: e.tipo_imposto || null,
+            categoria_imposto: e.categoria_imposto || null,
             created_at: serverTimestamp(),
           })
         )
