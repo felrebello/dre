@@ -54,12 +54,32 @@ export async function exportToPDF(options: PDFExportOptions): Promise<void> {
         if (clonedElement) {
           // Remover gradiente de fundo no clone para melhor renderização
           clonedElement.style.background = '#ffffff';
-          clonedElement.style.padding = '20px';
+          clonedElement.style.padding = '15px 25px';
+          clonedElement.style.maxWidth = '100%';
+
+          // Otimizar espaçamento entre seções para PDF
+          const dashboardContainer = clonedElement.querySelector('[data-section="dashboard"]');
+          if (dashboardContainer) {
+            (dashboardContainer as HTMLElement).style.marginTop = '15px';
+            // Reduzir espaçamento entre gráficos
+            const chartContainers = dashboardContainer.querySelectorAll('.space-y-8 > div');
+            chartContainers.forEach((container, index) => {
+              if (index > 0) {
+                (container as HTMLElement).style.marginTop = '20px';
+              }
+            });
+          }
 
           // Garantir que os gráficos sejam renderizados corretamente
           const charts = clonedElement.querySelectorAll('.recharts-wrapper');
           charts.forEach(chart => {
             (chart as HTMLElement).style.width = '100%';
+          });
+
+          // Otimizar padding dos cards de gráficos
+          const chartCards = clonedElement.querySelectorAll('.rounded-2xl');
+          chartCards.forEach(card => {
+            (card as HTMLElement).style.padding = '16px';
           });
         }
       },
