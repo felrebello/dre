@@ -1,5 +1,21 @@
 # Instruções para Executar o Sistema de Relatórios DRE
 
+## ⚠️ IMPORTANTE: Migração de Banco de Dados Pendente
+
+Se você encontrar o erro:
+```
+"Could not find the 'categoria_imposto' column of 'expense_entries' in the schema cache"
+```
+
+Você precisa aplicar a migração de impostos ao banco de dados. **Consulte o arquivo `APLICAR_MIGRACAO_IMPOSTOS.md` para instruções detalhadas.**
+
+Resumo rápido:
+1. Acesse o [Supabase Dashboard](https://app.supabase.com)
+2. Vá em **SQL Editor**
+3. Execute o script da migração em `supabase/migrations/20251027185440_add_tax_fields.sql`
+
+---
+
 ## Problema Comum: Relatórios Sem Formatação
 
 Se os relatórios aparecerem sem formatação (sem cores, estilos, ou completamente "quebrados"), siga estas etapas:
