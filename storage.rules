@@ -1,0 +1,44 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Função auxiliar para verificar autenticação
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Função auxiliar para validar tipo de arquivo
+    function isValidFileType() {
+      return request.resource.contentType.matches('application/pdf') ||
+             request.resource.contentType.matches('text/csv') ||
+             request.resource.contentType.matches('application/vnd.ms-excel') ||
+             request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }
+
+    // Função auxiliar para validar tamanho do arquivo (max 10MB)
+    function isValidFileSize() {
+      return request.resource.size <= 10 * 1024 * 1024;
+    }
+
+    // Regras para arquivos de usuários
+    // Estrutura: /users/{userId}/reports/{reportId}/{fileName}
+    match /users/{userId}/reports/{reportId}/{fileName} {
+      // Permitir leitura se o usuário é o dono
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+
+      // Permitir upload se o usuário é o dono, arquivo é válido e tem tamanho adequado
+      allow write: if isAuthenticated() &&
+                      request.auth.uid == userId &&
+                      isValidFileType() &&
+                      isValidFileSize();
+
+      // Permitir exclusão se o usuário é o dono
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Bloquear acesso a outros diretórios
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -14,7 +14,7 @@ import {
   ReportSummary,
   fetchReportById,
   extractYearMonth,
-} from '../lib/supabase';
+} from '../lib/firebase';
 
 interface ReportsComparisonProps {
   onBack: () => void;

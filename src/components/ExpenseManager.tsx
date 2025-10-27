@@ -1,7 +1,7 @@
 // Componente para gerenciar despesas do relatório (adicionar, remover, visualizar)
 import { useState, useMemo } from 'react';
 import { Trash2, Plus, X, Calendar, DollarSign, FileText, AlertCircle, Tag, Edit } from 'lucide-react';
-import { ExpenseEntry, deleteExpense, addManualExpense, updateExpense, extractYearMonth } from '../lib/supabase';
+import { ExpenseEntry, deleteExpense, addManualExpense, updateExpense, extractYearMonth } from '../lib/firebase';
 import { identificarImposto, ImpostoReceita, ImpostoLucro } from '../types/tax';
 
 interface ExpenseManagerProps {
@@ -50,7 +50,7 @@ export default function ExpenseManager({
     setIsProcessing(true);
 
     try {
-      await deleteExpense(expenseId);
+      await deleteExpense(reportId, expenseId);
       setSuccess('Despesa excluída com sucesso! Clique em "Salvar e Recalcular" para atualizar o DRE.');
       setDeleteConfirm(null);
       setTimeout(() => setSuccess(null), 5000);
@@ -613,7 +613,7 @@ function EditExpenseModal({
       }
 
       // Atualizar despesa
-      await updateExpense(expense.id, {
+      await updateExpense(expense.id, reportId, {
         date: formData.date,
         description: formData.description,
         category: formData.category,

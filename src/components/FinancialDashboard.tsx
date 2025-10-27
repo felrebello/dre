@@ -15,7 +15,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { TrendingUp, TrendingDown } from 'lucide-react';
-import { DREData } from '../lib/supabase';
+import { DREData } from '../lib/firebase';
 import { formatCurrency } from '../utils/dreGenerator';
 
 interface FinancialDashboardProps {

@@ -1,12 +1,14 @@
 // Aplicação principal do sistema de relatório DRE
 import { useState } from 'react';
+import { AuthProvider, useAuth } from './components/AuthProvider';
+import LoginPage from './components/LoginPage';
 import ClinicSelector from './components/ClinicSelector';
 import FileUpload, { UploadedFile } from './components/FileUpload';
 import ExpenseClassification, { ClassifiedExpense } from './components/ExpenseClassification';
 import DREReport from './components/DREReport';
 import SavedReportsList from './components/SavedReportsList';
 import ReportsComparison from './components/ReportsComparison';
-import { supabase, DREData, fetchReportById, deleteReport, duplicateReport } from './lib/supabase';
+import { DREData, fetchReportById, deleteReport, duplicateReport, createReport } from './lib/firebase';
 import {
   parseRevenuesCSV,
   parseExpensesCSV,
@@ -315,90 +317,29 @@ function App() {
         ? analyzeReconciliation(revenues, classifiedExpenses, bankTransactions)
         : null;
 
-      // Salvar no banco de dados
+      // Salvar no banco de dados usando Firebase
       console.log('Salvando relatório no banco de dados...');
 
-      const { data: reportRecord, error: reportError } = await supabase
-        .from('financial_reports')
-        .insert([
-          {
-            clinic_id: selectedClinic.id,
-            report_month: `${reportMonth}-01`,
-            bank_statement_file: bankFile?.name || null,
-            revenues_file: revenuesFile.name,
-            expenses_file: expensesFile.name,
-            status: 'completed',
-            dre_data: dreData,
-          },
-        ])
-        .select()
-        .single();
-
-      if (reportError) {
-        console.error('Erro ao salvar relatório:', reportError);
-        throw reportError;
-      }
-
-      console.log('Relatório salvo com sucesso, ID:', reportRecord.id);
-
-      // Salvar receitas
-      if (revenues.length > 0) {
-        console.log('Salvando receitas:', revenues.length);
-
-        const revenueEntries = revenues.map((rev) => ({
-          report_id: reportRecord.id,
-          date: rev.date,
-          description: rev.description,
-          category: rev.category,
-          amount: rev.amount,
-        }));
-
-        const { error: revenuesError } = await supabase
-          .from('revenue_entries')
-          .insert(revenueEntries);
-
-        if (revenuesError) {
-          console.error('Erro ao salvar receitas:', revenuesError);
-          throw revenuesError;
+      const reportId = await createReport(
+        selectedClinic.id,
+        reportMonth,
+        dreData,
+        revenues,
+        classifiedExpenses,
+        {
+          bankStatementFile: bankFile?.name,
+          revenuesFile: revenuesFile.name,
+          expensesFile: expensesFile.name,
         }
+      );
 
-        console.log('Receitas salvas com sucesso');
-      }
-
-      // Salvar despesas com classificação
-      if (classifiedExpenses.length > 0) {
-        console.log('Salvando despesas:', classifiedExpenses.length);
-
-        const expenseEntries = classifiedExpenses.map((exp) => ({
-          report_id: reportRecord.id,
-          date: exp.date,
-          description: exp.description,
-          category: exp.categoria_personalizada || exp.category,
-          amount: exp.amount,
-          tipo_despesa: exp.tipo_despesa,
-          categoria_personalizada: exp.categoria_personalizada || null,
-          classificacao_manual: exp.classificacao_manual,
-          sugestao_automatica: exp.sugestao_automatica,
-          is_manual_entry: false,
-        }));
-
-        const { error: expensesError } = await supabase
-          .from('expense_entries')
-          .insert(expenseEntries);
-
-        if (expensesError) {
-          console.error('Erro ao salvar despesas:', expensesError);
-          throw expensesError;
-        }
-
-        console.log('Despesas salvas com sucesso');
-      }
+      console.log('Relatório salvo com sucesso, ID:', reportId);
 
       // Definir dados do relatório e mudar para visualização
       console.log('Processo completo! Mostrando relatório DRE...');
 
       setReportData({
-        reportId: reportRecord.id,
+        reportId,
         dreData,
         reconciliation,
         reportMonth,
@@ -414,13 +355,11 @@ function App() {
       if (err instanceof Error) {
         errorMessage = err.message;
 
-        // Erros específicos do Supabase
-        if (errorMessage.includes('foreign key')) {
-          errorMessage = 'Erro de referência no banco de dados. Verifique se a clínica existe.';
-        } else if (errorMessage.includes('unique')) {
-          errorMessage = 'Já existe um relatório para este mês. Por favor, exclua o anterior primeiro.';
-        } else if (errorMessage.includes('null value')) {
-          errorMessage = 'Dados obrigatórios ausentes. Verifique os arquivos enviados.';
+        // Erros específicos do Firebase
+        if (errorMessage.includes('permission')) {
+          errorMessage = 'Erro de permissão. Verifique se você está autenticado.';
+        } else if (errorMessage.includes('not-found')) {
+          errorMessage = 'Recurso não encontrado. Verifique se a clínica existe.';
         }
       }
 
@@ -580,4 +519,35 @@ function App() {
   return null;
 }
 
-export default App;
+// Wrapper com autenticação
+function AppWithAuth() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-6"></div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Carregando...
+          </h2>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
+  return <App />;
+}
+
+// Exportar com AuthProvider
+export default function AppWrapper() {
+  return (
+    <AuthProvider>
+      <AppWithAuth />
+    </AuthProvider>
+  );
+}
