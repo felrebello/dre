@@ -1,8 +1,8 @@
 // Componente para classificação de despesas (fixas vs variáveis) e identificação de impostos
-import { useState, useMemo } from 'react';
-import { CheckCircle, DollarSign, TrendingDown, AlertCircle, ArrowRight, Tag } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { CheckCircle, DollarSign, TrendingDown, AlertCircle, ArrowRight, Tag, Trash2, X } from 'lucide-react';
 import { ParsedExpense } from '../utils/csvParser';
-import { identificarImposto } from '../types/tax';
+import { identificarImposto, ImpostoReceita, ImpostoLucro } from '../types/tax';
 
 // Interface para despesa com classificação
 export interface ClassifiedExpense extends ParsedExpense {
@@ -11,7 +11,8 @@ export interface ClassifiedExpense extends ParsedExpense {
   classificacao_manual: boolean;
   sugestao_automatica: 'fixa' | 'variavel';
   e_imposto: boolean;
-  tipo_imposto?: 'receita' | 'lucro';
+  tipo_imposto?: 'receita' | 'lucro' | null;
+  categoria_imposto?: string | null;
 }
 
 interface ExpenseClassificationProps {
@@ -252,6 +253,129 @@ function suggestExpenseType(expense: ParsedExpense, allExpenses: ParsedExpense[]
   return score > 0 ? 'fixa' : 'variavel';
 }
 
+// Componente modal inline para classificar imposto
+interface TaxClassificationModalProps {
+  expense: ClassifiedExpense;
+  onSave: (tipoImposto: 'receita' | 'lucro', categoriaImposto: string | null) => void;
+  onCancel: () => void;
+}
+
+function TaxClassificationModal({ expense, onSave, onCancel }: TaxClassificationModalProps) {
+  const [tipoImposto, setTipoImposto] = useState<'receita' | 'lucro'>('receita');
+  const [categoriaImposto, setCategoriaImposto] = useState<string>('');
+
+  const handleSave = () => {
+    onSave(tipoImposto, categoriaImposto || null);
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-purple-900">
+          Classificar como Imposto: {expense.description}
+        </h3>
+        <button
+          onClick={onCancel}
+          className="text-purple-600 hover:text-purple-800"
+          title="Cancelar"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {/* Tipo de Imposto */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Tipo de Imposto
+          </label>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setTipoImposto('receita');
+                setCategoriaImposto('');
+              }}
+              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                tipoImposto === 'receita'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-white text-gray-700 border-2 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              Imposto sobre Receita
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setTipoImposto('lucro');
+                setCategoriaImposto('');
+              }}
+              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                tipoImposto === 'lucro'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-white text-gray-700 border-2 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              Imposto sobre Lucro
+            </button>
+          </div>
+          <p className="text-xs text-gray-600 mt-2">
+            {tipoImposto === 'receita'
+              ? 'Impostos calculados sobre a receita bruta (PIS, COFINS, ISS, ICMS, Simples Nacional)'
+              : 'Impostos calculados sobre o lucro (IRPJ, CSLL)'}
+          </p>
+        </div>
+
+        {/* Categoria do Imposto */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Categoria do Imposto
+          </label>
+          <select
+            value={categoriaImposto}
+            onChange={(e) => setCategoriaImposto(e.target.value)}
+            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+          >
+            <option value="">Selecione uma categoria (opcional)</option>
+            {tipoImposto === 'receita' ? (
+              <>
+                <option value={ImpostoReceita.PIS}>PIS</option>
+                <option value={ImpostoReceita.COFINS}>COFINS</option>
+                <option value={ImpostoReceita.ISS}>ISS / ISSQN</option>
+                <option value={ImpostoReceita.ICMS}>ICMS</option>
+                <option value={ImpostoReceita.SIMPLES}>SIMPLES Nacional / DAS</option>
+                <option value="outros">Outros Impostos sobre Receita</option>
+              </>
+            ) : (
+              <>
+                <option value={ImpostoLucro.IRPJ}>IRPJ</option>
+                <option value={ImpostoLucro.CSLL}>CSLL</option>
+                <option value="outros">Outros Impostos sobre Lucro</option>
+              </>
+            )}
+          </select>
+        </div>
+
+        {/* Botões de ação */}
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={onCancel}
+            className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold"
+          >
+            Salvar Classificação
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ExpenseClassification({
   expenses,
   onClassificationComplete,
@@ -269,13 +393,16 @@ export default function ExpenseClassification({
         classificacao_manual: false,
         sugestao_automatica: sugestao,
         e_imposto: eImposto,
-        tipo_imposto: impostoInfo?.tipo,
+        tipo_imposto: impostoInfo?.tipo || null,
+        categoria_imposto: impostoInfo?.categoria?.toString() || null,
       };
     })
   );
 
   const [showOnlyUnclassified, setShowOnlyUnclassified] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [editingTaxIndex, setEditingTaxIndex] = useState<number | null>(null);
+  const [deleteConfirmIndex, setDeleteConfirmIndex] = useState<number | null>(null);
 
   // Calcular totais
   const totals = useMemo(() => {
@@ -341,17 +468,48 @@ export default function ExpenseClassification({
 
   // Handler para marcar/desmarcar como imposto
   const handleToggleImposto = (index: number) => {
+    const current = classifiedExpenses[index];
+    if (current.e_imposto) {
+      // Se já é imposto, desmarcar
+      setClassifiedExpenses((prev) => {
+        const updated = [...prev];
+        updated[index] = {
+          ...updated[index],
+          e_imposto: false,
+          tipo_imposto: null,
+          categoria_imposto: null,
+          classificacao_manual: true,
+        };
+        return updated;
+      });
+      setEditingTaxIndex(null);
+    } else {
+      // Se não é imposto, abrir modal de edição
+      setEditingTaxIndex(index);
+    }
+  };
+
+  // Handler para salvar classificação de imposto
+  const handleSaveTaxClassification = (index: number, tipoImposto: 'receita' | 'lucro', categoriaImposto: string | null) => {
     setClassifiedExpenses((prev) => {
       const updated = [...prev];
-      const current = updated[index];
       updated[index] = {
         ...updated[index],
-        e_imposto: !current.e_imposto,
-        tipo_imposto: !current.e_imposto ? 'receita' : undefined,
+        e_imposto: true,
+        tipo_imposto: tipoImposto,
+        categoria_imposto: categoriaImposto,
+        tipo_despesa: null, // Limpar classificação fixa/variável
         classificacao_manual: true,
       };
       return updated;
     });
+    setEditingTaxIndex(null);
+  };
+
+  // Handler para excluir despesa
+  const handleDeleteExpense = (index: number) => {
+    setClassifiedExpenses((prev) => prev.filter((_, i) => i !== index));
+    setDeleteConfirmIndex(null);
   };
 
   // Handler para alterar categoria personalizada
@@ -592,84 +750,133 @@ export default function ExpenseClassification({
                   <th className="px-4 py-3 text-right text-sm font-semibold">Valor</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold">Tipo</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold">Classificação</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {displayedExpenses.map((expense, index) => {
                   const originalIndex = classifiedExpenses.findIndex((e) => e === expense);
+                  const isEditingTax = editingTaxIndex === originalIndex;
+                  const isConfirmingDelete = deleteConfirmIndex === originalIndex;
+
                   return (
-                    <tr key={originalIndex} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {new Date(expense.date).toLocaleDateString('pt-BR')}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{expense.description}</td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                          {expense.categoria_personalizada || expense.category}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">
-                        {formatCurrency(expense.amount)}
-                      </td>
-                      <td className="px-4 py-3">
-                        {expense.e_imposto ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <Tag className="h-4 w-4 text-purple-600" />
-                            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded font-medium">
-                              Imposto {expense.tipo_imposto === 'receita' ? '(Receita)' : '(Lucro)'}
-                            </span>
-                            <button
-                              onClick={() => handleToggleImposto(originalIndex)}
-                              className="text-xs text-red-600 hover:text-red-800 underline"
-                              title="Desmarcar como imposto"
-                            >
-                              X
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="text-xs text-gray-500">Despesa</span>
-                            <button
-                              onClick={() => handleToggleImposto(originalIndex)}
-                              className="text-xs text-purple-600 hover:text-purple-800 underline"
-                              title="Marcar como imposto"
-                            >
-                              É imposto?
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {expense.e_imposto ? (
+                    <React.Fragment key={originalIndex}>
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {new Date(expense.date).toLocaleDateString('pt-BR')}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{expense.description}</td>
+                        <td className="px-4 py-3">
+                          <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                            {expense.categoria_personalizada || expense.category}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">
+                          {formatCurrency(expense.amount)}
+                        </td>
+                        <td className="px-4 py-3">
+                          {expense.e_imposto ? (
+                            <div className="flex items-center justify-center gap-2">
+                              <Tag className="h-4 w-4 text-purple-600" />
+                              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded font-medium">
+                                Imposto {expense.tipo_imposto === 'receita' ? '(Receita)' : '(Lucro)'}
+                              </span>
+                              <button
+                                onClick={() => handleToggleImposto(originalIndex)}
+                                className="text-xs text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded"
+                                title="Desmarcar como imposto"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="text-xs text-gray-500">Despesa</span>
+                              <button
+                                onClick={() => handleToggleImposto(originalIndex)}
+                                className="text-xs text-purple-600 hover:text-purple-800 hover:bg-purple-50 px-2 py-1 rounded font-medium"
+                                title="Marcar como imposto"
+                              >
+                                Marcar imposto
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {expense.e_imposto ? (
+                            <div className="flex justify-center">
+                              <span className="text-xs text-gray-500 italic">Automático</span>
+                            </div>
+                          ) : (
+                            <div className="flex justify-center gap-2">
+                              <button
+                                onClick={() => handleClassificationChange(originalIndex, 'fixa')}
+                                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                                  expense.tipo_despesa === 'fixa'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                }`}
+                              >
+                                Fixa
+                              </button>
+                              <button
+                                onClick={() => handleClassificationChange(originalIndex, 'variavel')}
+                                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                                  expense.tipo_despesa === 'variavel'
+                                    ? 'bg-orange-600 text-white'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                }`}
+                              >
+                                Variável
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
                           <div className="flex justify-center">
-                            <span className="text-xs text-gray-500 italic">Automático</span>
+                            {isConfirmingDelete ? (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleDeleteExpense(originalIndex)}
+                                  className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                                >
+                                  Confirmar
+                                </button>
+                                <button
+                                  onClick={() => setDeleteConfirmIndex(null)}
+                                  className="text-xs px-2 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setDeleteConfirmIndex(originalIndex)}
+                                className="text-red-600 hover:text-red-800 hover:bg-red-50 p-2 rounded transition-colors"
+                                title="Excluir despesa"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
                           </div>
-                        ) : (
-                          <div className="flex justify-center gap-2">
-                          <button
-                            onClick={() => handleClassificationChange(originalIndex, 'fixa')}
-                            className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                              expense.tipo_despesa === 'fixa'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            }`}
-                          >
-                            Fixa
-                          </button>
-                          <button
-                            onClick={() => handleClassificationChange(originalIndex, 'variavel')}
-                            className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                              expense.tipo_despesa === 'variavel'
-                                ? 'bg-orange-600 text-white'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            }`}
-                          >
-                            Variável
-                          </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
+                        </td>
+                      </tr>
+
+                      {/* Modal inline para editar classificação de imposto */}
+                      {isEditingTax && (
+                        <tr>
+                          <td colSpan={7} className="px-4 py-4 bg-purple-50 border-2 border-purple-200">
+                            <TaxClassificationModal
+                              expense={expense}
+                              onSave={(tipoImposto, categoriaImposto) => {
+                                handleSaveTaxClassification(originalIndex, tipoImposto, categoriaImposto);
+                              }}
+                              onCancel={() => setEditingTaxIndex(null)}
+                            />
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>
