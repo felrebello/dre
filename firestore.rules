@@ -19,11 +19,7 @@ service cloud.firestore {
       allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
 
-      match /expense_entries/{expenseId} {
-        allow read, write: if isAuthenticated() && get(/databases/$(database)/documents/financial_reports/$(reportId)).data.userId == request.auth.uid;
-      }
-
-      match /revenue_entries/{revenueId} {
+      match /{subcollection}/{docId} {
         allow read, write: if isAuthenticated() && get(/databases/$(database)/documents/financial_reports/$(reportId)).data.userId == request.auth.uid;
       }
     }
