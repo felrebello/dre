@@ -22,8 +22,8 @@ export default function ExpenseDetailedTable({ expenses }: ExpenseDetailedTableP
 
   // Calcular totais gerais
   const totals = useMemo(() => {
-    const impostos = expenses.filter((exp) => identificarImposto(exp.description));
-    const operacionais = expenses.filter((exp) => !identificarImposto(exp.description));
+    const impostos = expenses.filter((exp) => exp.e_imposto || identificarImposto(exp.description));
+    const operacionais = expenses.filter((exp) => !exp.e_imposto && !identificarImposto(exp.description));
     const fixas = expenses.filter((exp) => exp.tipo_despesa === 'fixa');
     const variaveis = expenses.filter((exp) => exp.tipo_despesa === 'variavel');
     const manuais = expenses.filter((exp) => exp.is_manual_entry);
@@ -68,9 +68,9 @@ export default function ExpenseDetailedTable({ expenses }: ExpenseDetailedTableP
     return new Date(dateStr).toLocaleDateString('pt-BR');
   };
 
-  // Verificar se é imposto
+  // Verificar se é imposto (verificar marcação manual ou identificação automática)
   const isExpenseTax = (expense: ExpenseEntry) => {
-    return identificarImposto(expense.description) !== null;
+    return expense.e_imposto || identificarImposto(expense.description) !== null;
   };
 
   return (

@@ -76,9 +76,9 @@ export default function ExpenseManager({
     return new Date(dateStr).toLocaleDateString('pt-BR');
   };
 
-  // Identificar se é imposto
+  // Identificar se é imposto (verificar marcação manual ou identificação automática)
   const isExpenseTax = (expense: ExpenseEntry) => {
-    return identificarImposto(expense.description) !== null;
+    return expense.e_imposto || identificarImposto(expense.description) !== null;
   };
 
   // Verificar se despesa está fora do mês do relatório

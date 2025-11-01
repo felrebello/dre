@@ -113,7 +113,9 @@ export default function DREReport({
         categoria_personalizada: exp.categoria_personalizada || undefined,
         classificacao_manual: exp.classificacao_manual || false,
         sugestao_automatica: (exp.sugestao_automatica as 'fixa' | 'variavel') || 'fixa',
-        e_imposto: false, // Será detectado automaticamente pelo generateDRE
+        e_imposto: exp.e_imposto || false, // Preservar marcação manual de imposto
+        tipo_imposto: exp.tipo_imposto || undefined, // Preservar tipo de imposto manual
+        categoria_imposto: exp.categoria_imposto || undefined, // Preservar categoria de imposto manual
       }));
 
       // Gerar novo DRE com dados atualizados
