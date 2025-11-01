@@ -598,6 +598,19 @@ function EditExpenseModal({
     setIsSubmitting(true);
 
     try {
+      // Validar IDs necessários
+      if (!expense.id) {
+        onError('Erro: ID da despesa não encontrado.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!reportId) {
+        onError('Erro: ID do relatório não encontrado.');
+        setIsSubmitting(false);
+        return;
+      }
+
       // Validar que a data está no mês correto
       if (extractYearMonth(formData.date) !== reportMonth) {
         onError(
@@ -630,7 +643,8 @@ function EditExpenseModal({
       onSuccess();
     } catch (err) {
       console.error('Erro ao atualizar despesa:', err);
-      onError('Erro ao atualizar despesa. Tente novamente.');
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar despesa. Tente novamente.';
+      onError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

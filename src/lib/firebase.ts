@@ -275,8 +275,26 @@ export async function updateExpense(
   expense: Partial<Omit<ExpenseEntry, 'id' | 'created_at' | 'report_id'>>
 ): Promise<void> {
   try {
+    // Validar parâmetros
+    if (!expenseId) {
+      throw new Error('ID da despesa é obrigatório');
+    }
+    if (!reportId) {
+      throw new Error('ID do relatório é obrigatório');
+    }
+
+    // Remover campos undefined do objeto antes de enviar ao Firestore
+    // O Firestore não aceita valores undefined
+    const cleanedExpense: Record<string, any> = {};
+    Object.keys(expense).forEach((key) => {
+      const value = (expense as any)[key];
+      if (value !== undefined) {
+        cleanedExpense[key] = value;
+      }
+    });
+
     const expenseRef = doc(db, 'financial_reports', reportId, 'expense_entries', expenseId);
-    await updateDoc(expenseRef, expense);
+    await updateDoc(expenseRef, cleanedExpense);
   } catch (error) {
     console.error('Erro ao atualizar despesa:', error);
     throw error;
