@@ -29,15 +29,23 @@ service cloud.firestore {
 
     // Regras para Relatórios Financeiros
     match /financial_reports/{reportId} {
-      // Função auxiliar para verificar se o usuário é dono da clínica do relatório
+      // Função auxiliar para verificar se o usuário é dono da clínica do relatório (para leitura/update/delete)
       function isClinicOwner() {
         return isAuthenticated() &&
                get(/databases/$(database)/documents/clinics/$(resource.data.clinic_id)).data.userId == request.auth.uid;
       }
 
+      // Função auxiliar para verificar se o usuário é dono da clínica (para criação)
       function isClinicOwnerCreate() {
         return isAuthenticated() &&
                get(/databases/$(database)/documents/clinics/$(request.resource.data.clinic_id)).data.userId == request.auth.uid;
+      }
+
+      // Função auxiliar para subcoleções - verifica o documento pai
+      function isReportOwner() {
+        return isAuthenticated() &&
+               get(/databases/$(database)/documents/financial_reports/$(reportId)).data.clinic_id != null &&
+               get(/databases/$(database)/documents/clinics/$(get(/databases/$(database)/documents/financial_reports/$(reportId)).data.clinic_id)).data.userId == request.auth.uid;
       }
 
       // Permitir leitura se o usuário é dono da clínica
@@ -54,12 +62,12 @@ service cloud.firestore {
 
       // Subcoleção de Despesas
       match /expense_entries/{expenseId} {
-        allow read, write: if isClinicOwner();
+        allow read, write: if isReportOwner();
       }
 
       // Subcoleção de Receitas
       match /revenue_entries/{revenueId} {
-        allow read, write: if isClinicOwner();
+        allow read, write: if isReportOwner();
       }
     }
   }
