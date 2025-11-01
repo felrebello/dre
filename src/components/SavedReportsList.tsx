@@ -82,8 +82,8 @@ export default function SavedReportsList({
       const clinicsData = await fetchUserClinics(user.uid);
       setClinics(clinicsData);
 
-      // Carregar relatórios
-      const reportsData = await fetchAllReports();
+      // Carregar relatórios do usuário
+      const reportsData = await fetchAllReports(undefined, user.uid);
       setReports(reportsData);
       setFilteredReports(reportsData);
     } catch (err) {
@@ -96,9 +96,12 @@ export default function SavedReportsList({
 
   // Função para aplicar filtros
   const applyFilters = async () => {
+    if (!user) return;
+
     try {
       const filters = {
         clinicId: selectedClinic !== 'all' ? selectedClinic : undefined,
+        userId: user.uid,
         startMonth: startMonth || undefined,
         endMonth: endMonth || undefined,
         searchTerm: searchTerm || undefined,

@@ -382,14 +382,19 @@ export async function fetchReportById(reportId: string): Promise<any> {
   }
 }
 
-// Buscar todos os relatórios de uma clínica
-export async function fetchAllReports(clinicId?: string): Promise<ReportSummary[]> {
+// Buscar todos os relatórios de uma clínica ou do usuário
+export async function fetchAllReports(clinicId?: string, userId?: string): Promise<ReportSummary[]> {
   try {
     const reportsRef = collection(db, 'financial_reports');
-    let q = query(reportsRef, orderBy('report_month', 'desc'));
+    let q;
 
     if (clinicId) {
       q = query(reportsRef, where('clinic_id', '==', clinicId), orderBy('report_month', 'desc'));
+    } else if (userId) {
+      q = query(reportsRef, where('userId', '==', userId), orderBy('report_month', 'desc'));
+    } else {
+      // Se não especificar clinicId nem userId, retorna array vazio
+      return [];
     }
 
     const snapshot = await getDocs(q);
@@ -468,16 +473,22 @@ export async function deleteReport(reportId: string): Promise<void> {
 // Buscar relatórios com filtros
 export async function searchReports(filters: {
   clinicId?: string;
+  userId?: string;
   startMonth?: string;
   endMonth?: string;
   searchTerm?: string;
 }): Promise<ReportSummary[]> {
   try {
     const reportsRef = collection(db, 'financial_reports');
-    let q = query(reportsRef, orderBy('report_month', 'desc'));
+    let q;
 
     if (filters.clinicId) {
       q = query(reportsRef, where('clinic_id', '==', filters.clinicId), orderBy('report_month', 'desc'));
+    } else if (filters.userId) {
+      q = query(reportsRef, where('userId', '==', filters.userId), orderBy('report_month', 'desc'));
+    } else {
+      // Se não especificar clinicId nem userId, retorna array vazio
+      return [];
     }
 
     const snapshot = await getDocs(q);
@@ -547,10 +558,21 @@ export async function duplicateReport(reportId: string, newMonth: string): Promi
       fetchExpensesForReport(reportId),
     ]);
 
+    // Buscar a clínica para obter o userId
+    const clinicRef = doc(db, 'clinics', originalReport.clinic_id);
+    const clinicSnap = await getDoc(clinicRef);
+
+    if (!clinicSnap.exists()) {
+      throw new Error('Clínica não encontrada');
+    }
+
+    const userId = clinicSnap.data().userId;
+
     // Criar novo relatório
     const reportsRef = collection(db, 'financial_reports');
     const newReportRef = await addDoc(reportsRef, {
       clinic_id: originalReport.clinic_id,
+      userId: userId,
       report_month: `${newMonth}-01`,
       bank_statement_file: originalReport.bank_statement_file,
       revenues_file: originalReport.revenues_file,
@@ -622,10 +644,21 @@ export async function createReport(
   }
 ): Promise<string> {
   try {
+    // Buscar a clínica para obter o userId
+    const clinicRef = doc(db, 'clinics', clinicId);
+    const clinicSnap = await getDoc(clinicRef);
+
+    if (!clinicSnap.exists()) {
+      throw new Error('Clínica não encontrada');
+    }
+
+    const userId = clinicSnap.data().userId;
+
     // Criar relatório
     const reportsRef = collection(db, 'financial_reports');
     const reportDoc = await addDoc(reportsRef, {
       clinic_id: clinicId,
+      userId: userId,
       report_month: `${reportMonth}-01`,
       bank_statement_file: files.bankStatementFile || null,
       revenues_file: files.revenuesFile,
