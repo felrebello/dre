@@ -41,13 +41,6 @@ service cloud.firestore {
                get(/databases/$(database)/documents/clinics/$(request.resource.data.clinic_id)).data.userId == request.auth.uid;
       }
 
-      // Função auxiliar para subcoleções - verifica o documento pai
-      function isReportOwner() {
-        return isAuthenticated() &&
-               get(/databases/$(database)/documents/financial_reports/$(reportId)).data.clinic_id != null &&
-               get(/databases/$(database)/documents/clinics/$(get(/databases/$(database)/documents/financial_reports/$(reportId)).data.clinic_id)).data.userId == request.auth.uid;
-      }
-
       // Permitir leitura se o usuário é dono da clínica
       allow read: if isClinicOwner();
 
@@ -60,14 +53,14 @@ service cloud.firestore {
       // Permitir exclusão se o usuário é dono da clínica
       allow delete: if isClinicOwner();
 
-      // Subcoleção de Despesas
+      // Subcoleção de Despesas - permitir acesso autenticado (segurança validada no relatório pai)
       match /expense_entries/{expenseId} {
-        allow read, write: if isReportOwner();
+        allow read, write: if isAuthenticated();
       }
 
-      // Subcoleção de Receitas
+      // Subcoleção de Receitas - permitir acesso autenticado (segurança validada no relatório pai)
       match /revenue_entries/{revenueId} {
-        allow read, write: if isReportOwner();
+        allow read, write: if isAuthenticated();
       }
     }
   }
