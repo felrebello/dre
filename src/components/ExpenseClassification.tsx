@@ -20,68 +20,236 @@ interface ExpenseClassificationProps {
   onBack: () => void;
 }
 
-// Função para sugerir classificação automática baseada na categoria
-function suggestExpenseType(expense: ParsedExpense): 'fixa' | 'variavel' {
-  const category = expense.category.toLowerCase();
-  const description = expense.description.toLowerCase();
+// Função auxiliar para normalizar texto (remove acentos, pontuação e converte para minúsculas)
+function normalizeText(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .replace(/[^\w\s]/g, ' ') // Remove pontuação
+    .replace(/\s+/g, ' ') // Normaliza espaços
+    .trim();
+}
 
-  // Despesas tipicamente FIXAS (não variam com volume de atendimentos)
-  if (
-    category.includes('pessoal') ||
-    category.includes('administrativa') ||
-    description.includes('aluguel') ||
-    description.includes('salário') ||
-    description.includes('salario') ||
-    description.includes('pró-labore') ||
-    description.includes('prolabore') ||
-    description.includes('contador') ||
-    description.includes('contabilidade') ||
-    description.includes('água') ||
-    description.includes('agua') ||
-    description.includes('luz') ||
-    description.includes('energia') ||
-    description.includes('internet') ||
-    description.includes('telefone') ||
-    description.includes('condomínio') ||
-    description.includes('condominio') ||
-    description.includes('seguro') ||
-    description.includes('iptu')
-  ) {
-    return 'fixa';
+// Função para verificar se um texto contém alguma das palavras-chave
+function containsAnyKeyword(text: string, keywords: string[]): boolean {
+  const normalized = normalizeText(text);
+  return keywords.some(keyword => normalized.includes(normalizeText(keyword)));
+}
+
+// Função para analisar padrão temporal de recorrência
+function analyzeRecurrence(
+  expense: ParsedExpense,
+  allExpenses: ParsedExpense[]
+): { isRecurrent: boolean; avgAmount: number; occurrences: number } {
+  const normalizedDesc = normalizeText(expense.description);
+
+  // Encontrar despesas similares (mesma descrição normalizada)
+  const similarExpenses = allExpenses.filter(e => {
+    const similarity = normalizeText(e.description);
+    // Considerar similar se tiver pelo menos 70% de palavras em comum
+    const words1 = normalizedDesc.split(' ');
+    const words2 = similarity.split(' ');
+    const commonWords = words1.filter(w => words2.includes(w) && w.length > 2);
+    return commonWords.length >= Math.min(words1.length, words2.length) * 0.7;
+  });
+
+  const occurrences = similarExpenses.length;
+  const avgAmount = similarExpenses.reduce((sum, e) => sum + e.amount, 0) / occurrences;
+  const stdDeviation = Math.sqrt(
+    similarExpenses.reduce((sum, e) => sum + Math.pow(e.amount - avgAmount, 2), 0) / occurrences
+  );
+
+  // É recorrente se aparecer 2+ vezes e variação for baixa (< 30%)
+  const isRecurrent = occurrences >= 2 && (stdDeviation / avgAmount) < 0.3;
+
+  return { isRecurrent, avgAmount, occurrences };
+}
+
+// Função aprimorada para sugerir classificação automática
+function suggestExpenseType(expense: ParsedExpense, allExpenses: ParsedExpense[]): 'fixa' | 'variavel' {
+  const category = expense.category;
+  const description = expense.description;
+
+  // Sistema de pontuação: positivo = fixa, negativo = variável
+  let score = 0;
+
+  // ========== PALAVRAS-CHAVE PARA DESPESAS FIXAS ==========
+  const fixedKeywords = [
+    // Pessoal e folha de pagamento
+    'salario', 'salário', 'ordenado', 'vencimento', 'remuneracao',
+    'pro labore', 'pró-labore', 'prolabore', 'honorario', 'honorário',
+    'rescisao', 'rescisão', 'ferias', 'férias', '13 salario', 'decimo terceiro',
+    'vale transporte', 'vale alimentacao', 'vale refeicao', 'plano saude',
+    'plano odontologico', 'seguro vida', 'fgts', 'inss empregador',
+
+    // Ocupação e infraestrutura
+    'aluguel', 'locacao', 'locação', 'arrendamento', 'condominio', 'condomínio',
+    'iptu', 'ipva', 'taxa condominio', 'seguro imovel', 'seguro imóvel',
+
+    // Utilidades e serviços fixos
+    'agua', 'água', 'esgoto', 'luz', 'energia eletrica', 'energia elétrica',
+    'telefone', 'internet', 'banda larga', 'fibra optica', 'linha telefonica',
+    'telefonia', 'celular corporativo', 'pacote dados',
+
+    // Serviços profissionais fixos
+    'contador', 'contabilidade', 'assessoria contabil', 'escritorio contabil',
+    'advogado', 'consultoria juridica', 'assessoria juridica',
+    'auditoria', 'consultoria', 'assessoria',
+
+    // Seguros
+    'seguro', 'apolice', 'apólice', 'premio seguro', 'prêmio seguro',
+    'seguro responsabilidade', 'seguro equipamento',
+
+    // Licenças e autorizações
+    'licenca', 'licença', 'alvara', 'alvará', 'anuidade', 'mensalidade',
+    'registro profissional', 'conselho classe', 'cro', 'crm', 'coren',
+    'anvisa', 'vigilancia sanitaria', 'vigilância sanitária',
+
+    // Manutenção preventiva e contratos
+    'manutencao preventiva', 'manutenção preventiva', 'contrato manutencao',
+    'manutencao mensal', 'assistencia tecnica', 'assistência técnica',
+
+    // Software e sistemas
+    'software', 'sistema', 'licenca software', 'licença software',
+    'assinatura', 'saas', 'cloud', 'nuvem', 'hospedagem',
+
+    // Depreciação e amortização
+    'depreciacao', 'depreciação', 'amortizacao', 'amortização',
+
+    // Limpeza e conservação
+    'limpeza', 'faxina', 'servico limpeza', 'material limpeza fixo',
+    'higienizacao', 'higienização',
+  ];
+
+  // ========== PALAVRAS-CHAVE PARA DESPESAS VARIÁVEIS ==========
+  const variableKeywords = [
+    // Materiais médicos/odontológicos
+    'material medico', 'material médico', 'mat medico', 'mat. med.',
+    'material odontologico', 'material odontológico', 'mat odonto', 'mat. odonto',
+    'insumo', 'insumos', 'descartavel', 'descartável', 'consumivel', 'consumível',
+
+    // Medicamentos e fármacos
+    'medicamento', 'farmaco', 'fármaco', 'droga', 'remedio', 'remédio',
+    'anestesico', 'anestésico', 'antibiotico', 'antibiótico',
+
+    // Materiais específicos
+    'luva', 'mascara', 'máscara', 'avental', 'touca', 'capote',
+    'seringa', 'agulha', 'cateter', 'sonda', 'gaze', 'atadura',
+    'algodao', 'algodão', 'alcool', 'álcool', 'antisseptico', 'antisséptico',
+    'fio cirurgico', 'fio cirúrgico', 'sutura', 'bisturi', 'lamina', 'lâmina',
+
+    // Odontologia específico
+    'resina', 'ionomer', 'ionomero', 'amalgama', 'amálgama',
+    'anestesico odontologico', 'broca', 'lixa', 'disco', 'mandril',
+    'profilaxia', 'fluor', 'fluoreto', 'selante', 'clareador',
+    'moldeira', 'alginato', 'silicone', 'gesso', 'cimento',
+
+    // Radiologia
+    'filme radiografico', 'filme radiográfico', 'sensor digital',
+    'revelador', 'fixador', 'solucao reveladora', 'solução reveladora',
+
+    // Laboratório
+    'reagente', 'teste', 'kit', 'analise', 'análise', 'exame',
+    'amostra', 'cultura', 'meio cultura', 'placa petri',
+
+    // Custos variáveis operacionais
+    'custo variavel', 'custo variável', 'cmv', 'custo mercadoria',
+    'custo servico', 'custo serviço', 'custo procedimento',
+
+    // Comissões e variáveis de vendas
+    'comissao', 'comissão', 'bonus', 'bônus', 'premiacao', 'premiação',
+    'incentivo', 'participacao resultado', 'participação resultado',
+
+    // Marketing e publicidade variável
+    'marketing', 'publicidade', 'propaganda', 'anuncio', 'anúncio',
+    'divulgacao', 'divulgação', 'ads', 'google ads', 'facebook ads',
+    'instagram', 'redes sociais', 'influencer', 'influenciador',
+    'panfleto', 'folder', 'banner', 'outdoor',
+
+    // Despesas financeiras variáveis
+    'juros', 'juro', 'multa', 'tarifa bancaria', 'tarifa bancária',
+    'iof', 'desconto duplicata', 'antecipacao', 'antecipação',
+    'taxa cartao', 'taxa cartão', 'maquininha', 'tef', 'credito', 'crédito',
+
+    // Frete e logística
+    'frete', 'entrega', 'correio', 'sedex', 'pac', 'transporte',
+    'logistica', 'logística', 'despacho', 'envio',
+
+    // Embalagens e descartáveis
+    'embalagem', 'sacola', 'saco', 'caixa', 'envelope',
+    'etiqueta', 'rotulo', 'rótulo',
+
+    // Manutenção corretiva (variável)
+    'manutencao corretiva', 'manutenção corretiva', 'reparo', 'conserto',
+    'pecas', 'peças', 'componente', 'substituicao', 'substituição',
+
+    // Terceirização de serviços variáveis
+    'terceirizado', 'freelancer', 'autonomo', 'autônomo', 'temporario', 'temporário',
+    'servico terceiro', 'serviço terceiro', 'prestador servico', 'prestador serviço',
+  ];
+
+  // Análise de palavras-chave
+  if (containsAnyKeyword(description, fixedKeywords) || containsAnyKeyword(category, fixedKeywords)) {
+    score += 3;
   }
 
-  // Despesas tipicamente VARIÁVEIS (proporcionais ao volume de atendimentos)
-  if (
-    category.includes('custo') ||
-    category.includes('serviço') ||
-    category.includes('servico') ||
-    description.includes('material médico') ||
-    description.includes('material medico') ||
-    description.includes('medicamento') ||
-    description.includes('insumo') ||
-    description.includes('comissão') ||
-    description.includes('comissao') ||
-    description.includes('descartável') ||
-    description.includes('descartavel') ||
-    description.includes('reagente') ||
-    description.includes('luva') ||
-    description.includes('seringa')
-  ) {
-    return 'variavel';
+  if (containsAnyKeyword(description, variableKeywords) || containsAnyKeyword(category, variableKeywords)) {
+    score -= 3;
   }
 
-  // Despesas de marketing/vendas: considerar variável por padrão
-  if (category.includes('marketing') || category.includes('vendas')) {
-    return 'variavel';
+  // ========== ANÁLISE DE PADRÃO TEMPORAL ==========
+  const recurrence = analyzeRecurrence(expense, allExpenses);
+
+  if (recurrence.isRecurrent) {
+    // Se é recorrente e o valor atual é similar à média (±20%), forte indicador de despesa fixa
+    const deviation = Math.abs(expense.amount - recurrence.avgAmount) / recurrence.avgAmount;
+    if (deviation < 0.2) {
+      score += 2;
+    } else if (deviation < 0.5) {
+      score += 1;
+    }
   }
 
-  // Despesas financeiras: considerar variável (podem variar conforme necessidade de capital)
-  if (category.includes('financeira') || description.includes('juros') || description.includes('tarifa')) {
-    return 'variavel';
+  // Se aparece 3+ vezes, tende a ser fixa
+  if (recurrence.occurrences >= 3) {
+    score += 1;
   }
 
-  // Padrão: considerar fixa (mais conservador)
-  return 'fixa';
+  // ========== ANÁLISE DE VALOR ==========
+  // Valores muito altos e esporádicos tendem a ser variáveis (equipamentos, grandes compras)
+  if (expense.amount > 10000 && recurrence.occurrences === 1) {
+    score -= 1;
+  }
+
+  // ========== ANÁLISE DE CATEGORIA ==========
+  const categoryNormalized = normalizeText(category);
+
+  // Categorias tipicamente fixas
+  if (categoryNormalized.includes('pessoal') ||
+      categoryNormalized.includes('administrativa') ||
+      categoryNormalized.includes('folha') ||
+      categoryNormalized.includes('rh')) {
+    score += 2;
+  }
+
+  // Categorias tipicamente variáveis
+  if (categoryNormalized.includes('custo') ||
+      categoryNormalized.includes('cmv') ||
+      categoryNormalized.includes('variavel')) {
+    score -= 2;
+  }
+
+  // ========== DECISÃO FINAL ==========
+  // Se score > 0: fixa, se score < 0: variável
+  // Se score = 0: analisar contexto adicional
+
+  if (score === 0) {
+    // Critério de desempate: despesas recorrentes são fixas, demais são variáveis
+    return recurrence.isRecurrent ? 'fixa' : 'variavel';
+  }
+
+  return score > 0 ? 'fixa' : 'variavel';
 }
 
 export default function ExpenseClassification({
@@ -94,7 +262,7 @@ export default function ExpenseClassification({
     expenses.map((expense) => {
       const impostoInfo = identificarImposto(expense.description);
       const eImposto = impostoInfo !== null;
-      const sugestao = suggestExpenseType(expense);
+      const sugestao = suggestExpenseType(expense, expenses);
       return {
         ...expense,
         tipo_despesa: sugestao,
