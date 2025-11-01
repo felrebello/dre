@@ -461,6 +461,10 @@ export default function ExpenseClassification({
         ...updated[index],
         tipo_despesa: tipo,
         classificacao_manual: true,
+        // Limpar classificação de imposto ao marcar como fixa/variável
+        e_imposto: false,
+        tipo_imposto: null,
+        categoria_imposto: null,
       };
       return updated;
     });

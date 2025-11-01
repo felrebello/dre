@@ -212,8 +212,38 @@ function calculateImpostosReceita(
 
   // Somar impostos identificados nas despesas
   impostosExpenses.forEach((expense) => {
+    // Verificar se é uma despesa classificada manualmente
+    const isClassifiedExpense = 'categoria_imposto' in expense;
+    const categoriaManual = isClassifiedExpense
+      ? (expense as ClassifiedExpense).categoria_imposto
+      : null;
+
+    // Se foi classificado manualmente, usar essa categoria
+    if (categoriaManual) {
+      const categoriaLower = categoriaManual.toLowerCase();
+      if (categoriaLower === 'pis') {
+        result.pis += expense.amount;
+      } else if (categoriaLower === 'cofins') {
+        result.cofins += expense.amount;
+      } else if (categoriaLower === 'iss' || categoriaLower === 'issqn') {
+        result.iss += expense.amount;
+      } else if (categoriaLower === 'icms') {
+        result.icms += expense.amount;
+      } else if (categoriaLower === 'simples' || categoriaLower === 'simples_nacional') {
+        result.simples += expense.amount;
+      } else {
+        result.outros += expense.amount;
+      }
+      return; // Já processado, pular para próxima despesa
+    }
+
+    // Se não foi classificado manualmente, tentar identificar automaticamente
     const impostoInfo = identificarImposto(expense.description);
-    if (!impostoInfo) return;
+    if (!impostoInfo) {
+      // Se não conseguiu identificar automaticamente, somar em "outros"
+      result.outros += expense.amount;
+      return;
+    }
 
     const desc = expense.description.toLowerCase();
     if (desc.includes('pis')) {
@@ -259,8 +289,32 @@ function calculateImpostosLucro(
 
   // Somar impostos sobre lucro identificados nas despesas
   impostosExpenses.forEach((expense) => {
+    // Verificar se é uma despesa classificada manualmente
+    const isClassifiedExpense = 'categoria_imposto' in expense;
+    const categoriaManual = isClassifiedExpense
+      ? (expense as ClassifiedExpense).categoria_imposto
+      : null;
+
+    // Se foi classificado manualmente, usar essa categoria
+    if (categoriaManual) {
+      const categoriaLower = categoriaManual.toLowerCase();
+      if (categoriaLower === 'irpj') {
+        result.irpj += expense.amount;
+      } else if (categoriaLower === 'csll') {
+        result.csll += expense.amount;
+      } else {
+        result.outros += expense.amount;
+      }
+      return; // Já processado, pular para próxima despesa
+    }
+
+    // Se não foi classificado manualmente, tentar identificar automaticamente
     const impostoInfo = identificarImposto(expense.description);
-    if (!impostoInfo || impostoInfo.tipo !== 'lucro') return;
+    if (!impostoInfo || impostoInfo.tipo !== 'lucro') {
+      // Se não conseguiu identificar automaticamente ou não é imposto sobre lucro, somar em "outros"
+      result.outros += expense.amount;
+      return;
+    }
 
     const desc = expense.description.toLowerCase();
     if (desc.includes('irpj')) {
