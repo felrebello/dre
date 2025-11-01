@@ -2,62 +2,25 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Função auxiliar para verificar autenticação
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Função auxiliar para verificar se o usuário é o dono
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    // Regras para Clínicas
     match /clinics/{clinicId} {
-      // Permitir leitura se o usuário é o dono da clínica
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-
-      // Permitir criação se o userId corresponde ao usuário autenticado
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-
-      // Permitir atualização se o usuário é o dono
       allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
-
-      // Permitir exclusão se o usuário é o dono
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
-    // Regras para Relatórios Financeiros
     match /financial_reports/{reportId} {
-      // Função auxiliar para verificar se o usuário é dono do relatório
-      function isReportOwner() {
-        return isAuthenticated() && resource.data.userId == request.auth.uid;
-      }
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
 
-      function isReportOwnerCreate() {
-        return isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      }
-
-      // Permitir leitura se o usuário é dono do relatório
-      allow read: if isReportOwner();
-
-      // Permitir criação se o userId corresponde ao usuário autenticado
-      allow create: if isReportOwnerCreate();
-
-      // Permitir atualização se o usuário é dono do relatório
-      allow update: if isReportOwner();
-
-      // Permitir exclusão se o usuário é dono do relatório
-      allow delete: if isReportOwner();
-
-      // Subcoleção de Despesas
-      match /expense_entries/{expenseId} {
-        allow read, write: if isReportOwner();
-      }
-
-      // Subcoleção de Receitas
-      match /revenue_entries/{revenueId} {
-        allow read, write: if isReportOwner();
+      match /{subcollection}/{docId} {
+        allow read, write: if isAuthenticated() && get(/databases/$(database)/documents/financial_reports/$(reportId)).data.userId == request.auth.uid;
       }
     }
   }
