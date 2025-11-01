@@ -134,13 +134,13 @@ function separateExpensesByType(
 
   expenses.forEach((expense) => {
     const isClassifiedExpense = 'e_imposto' in expense;
-    const eImpostoManual = isClassifiedExpense && (expense as ClassifiedExpense).e_imposto;
+    const eImpostoManual = isClassifiedExpense ? (expense as ClassifiedExpense).e_imposto : undefined;
     const tipoImpostoManual = isClassifiedExpense && (expense as ClassifiedExpense).tipo_imposto
       ? (expense as ClassifiedExpense).tipo_imposto
       : null;
 
-    // Se foi marcada manualmente como imposto, usar essa classificação
-    if (eImpostoManual) {
+    // Se foi marcada EXPLICITAMENTE como imposto (e_imposto === true), usar essa classificação
+    if (eImpostoManual === true) {
       if (tipoImpostoManual === 'receita') {
         result.impostosReceita.push(expense);
         return;
@@ -154,15 +154,23 @@ function separateExpensesByType(
       }
     }
 
-    // Verificar automaticamente se é imposto pela descrição
-    const impostoInfo = identificarImposto(expense.description);
-    if (impostoInfo) {
-      if (impostoInfo.tipo === 'receita') {
-        result.impostosReceita.push(expense);
-        return;
-      } else if (impostoInfo.tipo === 'lucro') {
-        result.impostosLucro.push(expense);
-        return;
+    // Se foi EXPLICITAMENTE desmarcada como imposto (e_imposto === false),
+    // NÃO fazer verificação automática - respeitar a escolha manual do usuário
+    if (eImpostoManual === false) {
+      // Continuar para classificação normal (não é imposto)
+      // Não fazer return aqui, deixar o código continuar para as próximas verificações
+    } else {
+      // Se e_imposto é undefined (não foi definido manualmente),
+      // verificar automaticamente se é imposto pela descrição
+      const impostoInfo = identificarImposto(expense.description);
+      if (impostoInfo) {
+        if (impostoInfo.tipo === 'receita') {
+          result.impostosReceita.push(expense);
+          return;
+        } else if (impostoInfo.tipo === 'lucro') {
+          result.impostosLucro.push(expense);
+          return;
+        }
       }
     }
 
@@ -326,14 +334,21 @@ function calculateTotalExpenses(expenses: ParsedExpense[] | ClassifiedExpense[])
   expenses.forEach((expense) => {
     // Pular impostos - eles não são classificados como fixos/variáveis
     const isClassifiedExpense = 'e_imposto' in expense;
-    if (isClassifiedExpense && expense.e_imposto) {
+    const eImpostoManual = isClassifiedExpense ? expense.e_imposto : undefined;
+
+    // Se foi marcada explicitamente como imposto, pular
+    if (eImpostoManual === true) {
       return; // Pular impostos
     }
 
-    // Verificar também se é imposto pela descrição
-    const impostoInfo = identificarImposto(expense.description);
-    if (impostoInfo) {
-      return; // Pular impostos
+    // Se foi explicitamente desmarcada como imposto (e_imposto === false),
+    // NÃO verificar automaticamente - respeitar escolha manual
+    // Se e_imposto é undefined, verificar automaticamente
+    if (eImpostoManual !== false) {
+      const impostoInfo = identificarImposto(expense.description);
+      if (impostoInfo) {
+        return; // Pular impostos detectados automaticamente
+      }
     }
 
     // Verificar se é ClassifiedExpense com tipo_despesa
@@ -456,11 +471,19 @@ export function aggregateExpensesByCategory(
 
   expenses.forEach((expense) => {
     // Pular impostos
-    const impostoInfo = identificarImposto(expense.description);
-    if (impostoInfo) return;
-
     const isClassifiedExpense = 'e_imposto' in expense;
-    if (isClassifiedExpense && expense.e_imposto) return;
+    const eImpostoManual = isClassifiedExpense ? expense.e_imposto : undefined;
+
+    // Se foi marcada explicitamente como imposto, pular
+    if (eImpostoManual === true) return;
+
+    // Se foi explicitamente desmarcada como imposto (e_imposto === false),
+    // NÃO verificar automaticamente - respeitar escolha manual
+    // Se e_imposto é undefined, verificar automaticamente
+    if (eImpostoManual !== false) {
+      const impostoInfo = identificarImposto(expense.description);
+      if (impostoInfo) return;
+    }
 
     const category = expense.category || categorizeDespesa(expense.description, '');
     const current = categoryMap.get(category) || { total: 0, count: 0 };
@@ -524,11 +547,19 @@ export function getTopExpenses(
   return expenses
     .filter((expense) => {
       // Pular impostos
-      const impostoInfo = identificarImposto(expense.description);
-      if (impostoInfo) return false;
-
       const isClassifiedExpense = 'e_imposto' in expense;
-      if (isClassifiedExpense && expense.e_imposto) return false;
+      const eImpostoManual = isClassifiedExpense ? expense.e_imposto : undefined;
+
+      // Se foi marcada explicitamente como imposto, pular
+      if (eImpostoManual === true) return false;
+
+      // Se foi explicitamente desmarcada como imposto (e_imposto === false),
+      // NÃO verificar automaticamente - respeitar escolha manual
+      // Se e_imposto é undefined, verificar automaticamente
+      if (eImpostoManual !== false) {
+        const impostoInfo = identificarImposto(expense.description);
+        if (impostoInfo) return false;
+      }
 
       return true;
     })
