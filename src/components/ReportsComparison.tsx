@@ -15,6 +15,7 @@ import {
   fetchReportById,
   extractYearMonth,
 } from '../lib/firebase';
+import { useAuth } from './AuthProvider';
 
 interface ReportsComparisonProps {
   onBack: () => void;
@@ -38,6 +39,7 @@ interface ComparisonData {
 }
 
 export default function ReportsComparison({ onBack }: ReportsComparisonProps) {
+  const { user } = useAuth();
   const [reports, setReports] = useState<ReportSummary[]>([]);
   const [selectedReports, setSelectedReports] = useState<string[]>([]);
   const [comparisonData, setComparisonData] = useState<ComparisonData[]>([]);
@@ -50,8 +52,10 @@ export default function ReportsComparison({ onBack }: ReportsComparisonProps) {
   }, []);
 
   const loadReports = async () => {
+    if (!user) return;
+
     try {
-      const data = await fetchAllReports();
+      const data = await fetchAllReports(undefined, user.uid);
       setReports(data);
     } catch (error) {
       console.error('Erro ao carregar relatórios:', error);
