@@ -29,6 +29,20 @@
       ]
     },
     {
+      "collectionGroup": "financial_reports",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "report_month",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "expense_entries",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
