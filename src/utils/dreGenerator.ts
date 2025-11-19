@@ -74,6 +74,14 @@ export function generateDRE(
   // Lucro operacional (EBIT)
   const lucroOperacional = lucroBruto - despesasOperacionais.total;
 
+  // Calcular depreciação e amortização
+  const { depreciacao, amortizacao } = calculateDepreciacaoAmortizacao(
+    separatedExpenses.despesasOperacionais
+  );
+
+  // EBITDA = EBIT + Depreciação + Amortização
+  const ebitda = lucroOperacional + depreciacao + amortizacao;
+
   // Outras receitas e despesas não operacionais
   const outrasReceitasDespesas = separatedExpenses.outrasReceitas.reduce(
     (sum, exp) => sum + exp.amount,
@@ -98,6 +106,7 @@ export function generateDRE(
   const margemBrutaPercent = receitaLiquida > 0 ? (lucroBruto / receitaLiquida) * 100 : 0;
   const margemOperacionalPercent =
     receitaLiquida > 0 ? (lucroOperacional / receitaLiquida) * 100 : 0;
+  const margemEbitdaPercent = receitaLiquida > 0 ? (ebitda / receitaLiquida) * 100 : 0;
   const margemLiquidaPercent = receitaLiquida > 0 ? (lucroLiquido / receitaLiquida) * 100 : 0;
 
   return {
@@ -110,12 +119,16 @@ export function generateDRE(
     despesas_fixas: despesasFixas,
     despesas_variaveis: despesasVariaveis,
     lucro_operacional: lucroOperacional,
+    depreciacao: depreciacao,
+    amortizacao: amortizacao,
+    ebitda: ebitda,
     outras_receitas_despesas: outrasReceitasDespesas,
     lucro_antes_impostos: lucroAntesImpostos,
     impostos_sobre_lucro: impostosLucro,
     lucro_liquido: lucroLiquido,
     margem_bruta_percent: margemBrutaPercent,
     margem_operacional_percent: margemOperacionalPercent,
+    margem_ebitda_percent: margemEbitdaPercent,
     margem_liquida_percent: margemLiquidaPercent,
   };
 }
@@ -373,6 +386,33 @@ function calculateDespesasOperacionais(despesas: ParsedExpense[]): {
 
   result.total =
     result.pessoal + result.administrativas + result.vendas + result.financeiras + result.outras;
+
+  return result;
+}
+
+// Calcular depreciação e amortização
+function calculateDepreciacaoAmortizacao(despesas: ParsedExpense[]): {
+  depreciacao: number;
+  amortizacao: number;
+} {
+  const result = {
+    depreciacao: 0,
+    amortizacao: 0,
+  };
+
+  despesas.forEach((expense) => {
+    const desc = expense.description.toLowerCase();
+
+    // Identificar depreciação
+    if (desc.includes('deprecia') || desc.includes('depreciação')) {
+      result.depreciacao += expense.amount;
+    }
+
+    // Identificar amortização
+    if (desc.includes('amortiza') || desc.includes('amortização')) {
+      result.amortizacao += expense.amount;
+    }
+  });
 
   return result;
 }

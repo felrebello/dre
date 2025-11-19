@@ -640,6 +640,33 @@ export default function DREReport({
               showPercent={dreData.margem_operacional_percent}
             />
 
+            {/* Depreciação e Amortização para EBITDA */}
+            {(dreData.depreciacao > 0 || dreData.amortizacao > 0) && (
+              <>
+                {dreData.depreciacao > 0 && (
+                  <DRELine
+                    label="(+) Depreciação"
+                    value={dreData.depreciacao}
+                    level={1}
+                  />
+                )}
+                {dreData.amortizacao > 0 && (
+                  <DRELine
+                    label="(+) Amortização"
+                    value={dreData.amortizacao}
+                    level={1}
+                  />
+                )}
+                <DRELine
+                  label="EBITDA"
+                  value={dreData.ebitda}
+                  bold
+                  highlight
+                  showPercent={dreData.margem_ebitda_percent}
+                />
+              </>
+            )}
+
             {/* Outras Receitas/Despesas */}
             {dreData.outras_receitas_despesas !== 0 && (
               <DRELine
