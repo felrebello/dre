@@ -115,12 +115,16 @@ export interface DREData {
   despesas_fixas: number;
   despesas_variaveis: number;
   lucro_operacional: number;
+  depreciacao: number;
+  amortizacao: number;
+  ebitda: number;
   outras_receitas_despesas: number;
   lucro_antes_impostos: number;
   impostos_sobre_lucro: ImpostosLucro;
   lucro_liquido: number;
   margem_bruta_percent: number;
   margem_operacional_percent: number;
+  margem_ebitda_percent: number;
   margem_liquida_percent: number;
 }
 

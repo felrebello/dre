@@ -79,13 +79,26 @@ export default function FinancialDashboard({ dreData, reportMonth }: FinancialDa
     const liquidezReduzida = (dreData.receita_liquida / dreData.despesas_operacionais.total) || 0;
     const liquidez = (dreData.receita_bruta / dreData.despesas_operacionais.total) || 0;
 
-    return [
+    const cards = [
       {
         title: 'Lucro Líquido',
         value: dreData.lucro_liquido,
         comparison: 15.3,
         target: null,
       },
+    ];
+
+    // Adicionar EBITDA se houver depreciação ou amortização
+    if (dreData.depreciacao > 0 || dreData.amortizacao > 0) {
+      cards.push({
+        title: 'EBITDA',
+        value: dreData.ebitda,
+        comparison: 12.8,
+        target: null,
+      });
+    }
+
+    cards.push(
       {
         title: 'Saldo no final do mês',
         value: dreData.lucro_liquido * 1.2,
@@ -105,8 +118,10 @@ export default function FinancialDashboard({ dreData, reportMonth }: FinancialDa
         comparison: null,
         target: '3 ou mais',
         isRatio: true,
-      },
-    ];
+      }
+    );
+
+    return cards;
   }, [dreData]);
 
   // Dados para gráfico de margem de lucro (circular)
@@ -153,7 +168,7 @@ export default function FinancialDashboard({ dreData, reportMonth }: FinancialDa
   const demonstrationData = useMemo(() => {
     const total = dreData.receita_bruta;
 
-    return [
+    const baseData = [
       {
         label: 'Total Receita',
         value: dreData.receita_bruta,
@@ -176,12 +191,24 @@ export default function FinancialDashboard({ dreData, reportMonth }: FinancialDa
         percentage: (dreData.despesas_operacionais.total / total) * 100,
       },
       {
-        label: 'Lucro Operacional',
+        label: 'Lucro Operacional (EBIT)',
         value: dreData.lucro_operacional,
         percentage: (dreData.lucro_operacional / total) * 100,
         highlight: true,
       },
     ];
+
+    // Adicionar EBITDA se houver depreciação ou amortização
+    if (dreData.depreciacao > 0 || dreData.amortizacao > 0) {
+      baseData.push({
+        label: 'EBITDA',
+        value: dreData.ebitda,
+        percentage: (dreData.ebitda / total) * 100,
+        highlight: true,
+      });
+    }
+
+    return baseData;
   }, [dreData]);
 
   const formatMonth = (month: string) => {
