@@ -140,15 +140,20 @@ export default function SavedReportsList({
     }).format(value);
   };
 
-  // Calcular estatísticas
-  const stats = {
-    totalReports: filteredReports.length,
-    totalRevenue: filteredReports.reduce((sum, r) => sum + r.receita_bruta, 0),
-    totalProfit: filteredReports.reduce((sum, r) => sum + r.lucro_liquido, 0),
-    averageMargin: filteredReports.length > 0
-      ? filteredReports.reduce((sum, r) => sum + r.margem_liquida_percent, 0) / filteredReports.length
-      : 0,
-  };
+  // Calcular estatísticas por clínica
+  const clinicStats = clinics.map((clinic) => {
+    const clinicReports = filteredReports.filter((r) => r.clinic_id === clinic.id);
+    return {
+      clinicId: clinic.id,
+      clinicName: clinic.name,
+      totalReports: clinicReports.length,
+      totalRevenue: clinicReports.reduce((sum, r) => sum + r.receita_bruta, 0),
+      totalProfit: clinicReports.reduce((sum, r) => sum + r.lucro_liquido, 0),
+      averageMargin: clinicReports.length > 0
+        ? clinicReports.reduce((sum, r) => sum + r.margem_liquida_percent, 0) / clinicReports.length
+        : 0,
+    };
+  }).filter((stat) => stat.totalReports > 0); // Mostrar apenas clínicas com relatórios
 
   // Estado de carregamento
   if (loading) {
@@ -204,40 +209,63 @@ export default function SavedReportsList({
           </div>
         </div>
 
-        {/* Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
-            <div className="flex items-center justify-between mb-2">
-              <FileText className="h-8 w-8 text-blue-500" />
-            </div>
-            <p className="text-sm text-gray-600 mb-1">Total de Relatórios</p>
-            <p className="text-3xl font-bold text-gray-900">{stats.totalReports}</p>
-          </div>
+        {/* Estatísticas por Clínica */}
+        {clinicStats.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Resumo por Clínica</h2>
+            <div className="space-y-6">
+              {clinicStats.map((stat) => (
+                <div key={stat.clinicId} className="bg-white rounded-xl shadow-md p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <BarChart3 className="h-5 w-5 mr-2 text-blue-600" />
+                    {stat.clinicName}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
+                      <div className="flex items-center justify-between mb-2">
+                        <FileText className="h-6 w-6 text-blue-500" />
+                      </div>
+                      <p className="text-sm text-gray-600 mb-1">Relatórios</p>
+                      <p className="text-2xl font-bold text-gray-900">{stat.totalReports}</p>
+                    </div>
 
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
-            <div className="flex items-center justify-between mb-2">
-              <DollarSign className="h-8 w-8 text-green-500" />
-            </div>
-            <p className="text-sm text-gray-600 mb-1">Receita Total</p>
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
-          </div>
+                    <div className="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
+                      <div className="flex items-center justify-between mb-2">
+                        <DollarSign className="h-6 w-6 text-green-500" />
+                      </div>
+                      <p className="text-sm text-gray-600 mb-1">Receita Total</p>
+                      <p className="text-xl font-bold text-gray-900">{formatCurrency(stat.totalRevenue)}</p>
+                    </div>
 
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-emerald-500">
-            <div className="flex items-center justify-between mb-2">
-              <TrendingUp className="h-8 w-8 text-emerald-500" />
-            </div>
-            <p className="text-sm text-gray-600 mb-1">Lucro Total</p>
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalProfit)}</p>
-          </div>
+                    <div className={`${stat.totalProfit >= 0 ? 'bg-emerald-50' : 'bg-red-50'} rounded-lg p-4 border-l-4 ${stat.totalProfit >= 0 ? 'border-emerald-500' : 'border-red-500'}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        {stat.totalProfit >= 0 ? (
+                          <TrendingUp className="h-6 w-6 text-emerald-500" />
+                        ) : (
+                          <TrendingDown className="h-6 w-6 text-red-500" />
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 mb-1">Lucro Total</p>
+                      <p className={`text-xl font-bold ${stat.totalProfit >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                        {formatCurrency(stat.totalProfit)}
+                      </p>
+                    </div>
 
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-indigo-500">
-            <div className="flex items-center justify-between mb-2">
-              <BarChart3 className="h-8 w-8 text-indigo-500" />
+                    <div className="bg-indigo-50 rounded-lg p-4 border-l-4 border-indigo-500">
+                      <div className="flex items-center justify-between mb-2">
+                        <BarChart3 className="h-6 w-6 text-indigo-500" />
+                      </div>
+                      <p className="text-sm text-gray-600 mb-1">Margem Média</p>
+                      <p className={`text-2xl font-bold ${stat.averageMargin >= 0 ? 'text-gray-900' : 'text-red-700'}`}>
+                        {stat.averageMargin.toFixed(1)}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-            <p className="text-sm text-gray-600 mb-1">Margem Média</p>
-            <p className="text-3xl font-bold text-gray-900">{stats.averageMargin.toFixed(1)}%</p>
           </div>
-        </div>
+        )}
 
         {/* Filtros e Busca */}
         <div className="bg-white rounded-xl shadow-md p-6 mb-8">
